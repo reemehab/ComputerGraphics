@@ -10,9 +10,13 @@
 
 #define IDM_EDIT_CHOOSECOLOR 4
 
+#define IDM_LINE_MIDPOINT 5
+#define IDM_LINE_DDA 6
+#define IDM_LINE_PARAMETRIC 7
+
 #include <tchar.h>
-#include <iostream>
 #include <windows.h>
+#include <vector>
 #include <iostream>
 using namespace std;
 /*  Declare Windows procedure  */
@@ -31,7 +35,7 @@ HCURSOR currentCursor = cNormal;
 
 CHOOSECOLOR colorChosen;
 COLORREF acrCustClr[16];
-COLORREF rgbCurrent; 
+COLORREF rgbCurrent;
 
 int WINAPI WinMain(HINSTANCE hThisInstance,
                    HINSTANCE hPrevInstance,
@@ -65,24 +69,24 @@ int WINAPI WinMain(HINSTANCE hThisInstance,
 
     /* The class is registered, let's create the program*/
     hwnd = CreateWindowEx(
-               0,                               /* Extended possibilites for variation */
-               szClassName,                     /* Classname */
-               _T("Computer Graphics Project"), /* Title Text */
-               WS_OVERLAPPEDWINDOW,             /* default window */
-               CW_USEDEFAULT,                   /* Windows decides the position */
-               CW_USEDEFAULT,                   /* where the window ends up on the screen */
-               544,                             /* The programs width */
-               375,                             /* and height in pixels */
-               HWND_DESKTOP,                    /* The window is a child-window to desktop */
-               CreateMenus(),                   /* Menu bar */
-               hThisInstance,                   /* Program Instance handler */
-               NULL                             /* No Window Creation data */
-           );
+        0,                               /* Extended possibilites for variation */
+        szClassName,                     /* Classname */
+        _T("Computer Graphics Project"), /* Title Text */
+        WS_OVERLAPPEDWINDOW,             /* default window */
+        CW_USEDEFAULT,                   /* Windows decides the position */
+        CW_USEDEFAULT,                   /* where the window ends up on the screen */
+        544,                             /* The programs width */
+        375,                             /* and height in pixels */
+        HWND_DESKTOP,                    /* The window is a child-window to desktop */
+        CreateMenus(),                   /* Menu bar */
+        hThisInstance,                   /* Program Instance handler */
+        NULL                             /* No Window Creation data */
+    );
 
     ZeroMemory(&colorChosen, sizeof(colorChosen));
     colorChosen.lStructSize = sizeof(colorChosen);
     colorChosen.hwndOwner = hwnd;
-    colorChosen.lpCustColors = (LPDWORD) acrCustClr;
+    colorChosen.lpCustColors = (LPDWORD)acrCustClr;
     colorChosen.rgbResult = rgbCurrent;
     colorChosen.Flags = CC_FULLOPEN | CC_RGBINIT;
 
@@ -108,86 +112,83 @@ int Round(double x)
 
 struct point
 {
-    int x,y;
-
+    int x, y;
 };
-void swap(double x1,double y1, double x2, double y2)
+void swap(double x1, double y1, double x2, double y2)
 {
-    double temp=0;
-    temp=x1;
-    x2=x1;
-    x1=temp;
-    temp=y1;
-    y1=y2;
-    y2=temp;
+    double temp = 0;
+    temp = x1;
+    x2 = x1;
+    x1 = temp;
+    temp = y1;
+    y1 = y2;
+    y2 = temp;
 }
-void lineDDA(HDC hdc,int x1, int y1, int x2, int y2, COLORREF c)
+void lineDDA(HDC hdc, int x1, int y1, int x2, int y2, COLORREF c)
 {
-    int dx=x2-x1;
-    int dy=y2-y1;
-    if(abs(dy)<=abs(dx))///slope < 1
+    int dx = x2 - x1;
+    int dy = y2 - y1;
+    if (abs(dy) <= abs(dx)) /// slope < 1
     {
-    if(x1>x2)
+        if (x1 > x2)
         {
-            swap(x1,y1,x2,y2);
+            swap(x1, y1, x2, y2);
         }
-        int x=x1;
-        double y=y1;
-        double m=(double)dy/dx;
-        SetPixel(hdc,x,y1,c);
-        while(x<x2)
+        int x = x1;
+        double y = y1;
+        double m = (double)dy / dx;
+        SetPixel(hdc, x, y1, c);
+        while (x < x2)
         {
             x++;
-            y+=m;
-            SetPixel(hdc,x,Round(y),c);
-
+            y += m;
+            SetPixel(hdc, x, Round(y), c);
         }
-
     }
-    else ///slope > 1
+    else /// slope > 1
     {
-        if(y1>y2)
+        if (y1 > y2)
         {
-            swap(x1,y1,x2,y2);
+            swap(x1, y1, x2, y2);
         }
-        double x=x1;
-        int y= y2;
-        double minV=dx/dy;
-        SetPixel(hdc,x1,y1,c);
-        while(y<y2)
+        double x = x1;
+        int y = y2;
+        double minV = dx / dy;
+        SetPixel(hdc, x1, y1, c);
+        while (y < y2)
         {
-            y++;;
-            x+=minV;
-            SetPixel(hdc,Round(x),y,c);
+            y++;
+            ;
+            x += minV;
+            SetPixel(hdc, Round(x), y, c);
         }
     }
-
-
 }
-void MidPointLine(HDC hdc,int x1, int y1, int x2, int y2,COLORREF c)
-{   cout<<"X1 "<<x1<<" Y1 "<<y1<<"X2"<<x2<<"Y2"<<y2<<endl;
+void MidPointLine(HDC hdc, int x1, int y1, int x2, int y2, COLORREF c)
+{
+    cout << "X1 " << x1 << " Y1 " << y1 << "X2" << x2 << "Y2" << y2 << endl;
     int dx = x2 - x1;
     int dy = y2 - y1;
 
-    if(dy<=dx) ///slope  <1
+    if (dy <= dx) /// slope  <1
     {
-        if(x1>x2)
+        if (x1 > x2)
         {
-            swap(x1,y1,x2,y2);
+            swap(x1, y1, x2, y2);
         }
 
-        int d = dx - 2*dy;
+        int d = dx - 2 * dy;
         int x = x1, y = y1;
-        int d1=-2*(dx-dy);
-        int d2=-2*dy;
-        SetPixel(hdc,x,y,c);
+        int d1 = -2 * (dx - dy);
+        int d2 = -2 * dy;
+        SetPixel(hdc, x, y, c);
         while (x < x2)
         {
             if (d <= 0)
             {
                 x++;
                 y++;
-                d+=d1;
+                d += d1;
             }
             else
             {
@@ -195,29 +196,29 @@ void MidPointLine(HDC hdc,int x1, int y1, int x2, int y2,COLORREF c)
                 x++;
             }
 
-            SetPixel(hdc,x,y,c);
+            SetPixel(hdc, x, y, c);
         }
     }
-    else if(dx<dy)  /// slope > 1
+    else if (dx < dy) /// slope > 1
     {
-        int d = 2*dx - dy;
-        if(y1>y2)
+        int d = 2 * dx - dy;
+        if (y1 > y2)
         {
-            swap(x1,y1,x2,y2);
+            swap(x1, y1, x2, y2);
         }
         int x = x1, y = y1;
-        while(y1<y2)
+        while (y1 < y2)
         {
-            int d=2*dx-dy;
-            int d1=2*dx;
-            int d2=2*dx-2*dy;
-            SetPixel(hdc,x,y,c);
-            while(y<y2)
+            int d = 2 * dx - dy;
+            int d1 = 2 * dx;
+            int d2 = 2 * dx - 2 * dy;
+            SetPixel(hdc, x, y, c);
+            while (y < y2)
             {
                 if (d <= 0)
                 {
                     y++;
-                    d+=d1;
+                    d += d1;
                 }
                 else
                 {
@@ -226,49 +227,99 @@ void MidPointLine(HDC hdc,int x1, int y1, int x2, int y2,COLORREF c)
                     y++;
                 }
 
-                SetPixel(hdc,x,y,c);
-
-
+                SetPixel(hdc, x, y, c);
             }
-
         }
     }
 }
-void paremetricLine(HDC hdc ,double x1, double y1, double x2, double y2, COLORREF c)
-{   double x,y;
-    for(double t=0; t<1 ; t+=0.0001)
+void paremetricLine(HDC hdc, double x1, double y1, double x2, double y2, COLORREF c)
+{
+    double x, y;
+    for (double t = 0; t < 1; t += 0.0001)
     {
-        x=x1+t*(x2-x1);
-        y=y1+t*(y2-y1);
-        SetPixel(hdc,Round(x),Round(y),c);
+        x = x1 + t * (x2 - x1);
+        y = y1 + t * (y2 - y1);
+        SetPixel(hdc, Round(x), Round(y), c);
     }
 }
 
+int currentFunction = -1;
+vector<point> points;
+
 /*  This function is called by the Windows function DispatchMessage()  */
-int index=1;
-HDC hdc;
-int Xc, Yc, Y1, Y2, X1, X2,R1,R2;
 LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HDC hdc = GetDC(hwnd);
     switch (message) /* handle the messages */
     {
     case WM_COMMAND:
-          switch(LOWORD(wParam)) {
-              case IDM_EDIT_CHOOSECOLOR:
-                if (ChooseColor(&colorChosen) == TRUE) {
-                    rgbCurrent = colorChosen.rgbResult;
-                }
-                
-                break;
-           }
-           
-           break;
+        switch (LOWORD(wParam))
+        {
+        case IDM_EDIT_CHOOSECOLOR:
+            if (ChooseColor(&colorChosen) == TRUE)
+            {
+                rgbCurrent = colorChosen.rgbResult;
+            }
+
+            break;
+        case IDM_LINE_DDA:
+        case IDM_LINE_MIDPOINT:
+        case IDM_LINE_PARAMETRIC:
+            currentFunction = LOWORD(wParam);
+            points.clear();
+            currentCursor = cPlus;
+            break;
+        }
+
+        break;
     case WM_SETCURSOR:
         SetCursor(currentCursor);
-    case WM_LBUTTONDBLCLK:
-    
         break;
+    case WM_LBUTTONUP:
+    {
+        int x = (int)LOWORD(lParam);
+        int y = (int)HIWORD(lParam);
+        point p = {x, y};
+
+        switch (currentFunction)
+        {
+        case IDM_LINE_DDA:
+            points.push_back(p);
+
+            if (points.size() == 2)
+            {
+                lineDDA(hdc, points[0].x, points[0].y, points[1].x, points[1].y, rgbCurrent);
+                currentCursor = cNormal;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_LINE_MIDPOINT:
+            points.push_back(p);
+
+            if (points.size() == 2)
+            {
+                MidPointLine(hdc, points[0].x, points[0].y, points[1].x, points[1].y, rgbCurrent);
+                currentCursor = cNormal;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_LINE_PARAMETRIC:
+            points.push_back(p);
+
+            if (points.size() == 2)
+            {
+                paremetricLine(hdc, (double)points[0].x, (double)points[0].y, (double)points[1].x, (double)points[1].y, rgbCurrent);
+                currentCursor = cNormal;
+                currentFunction = -1;
+                points.clear();
+            }
+            
+            break;
+        }
+    }
+    break;
     case WM_DESTROY:
         PostQuitMessage(0); /* send a WM_QUIT to the message queue */
         break;
@@ -286,20 +337,19 @@ HMENU CreateMenus()
     HMENU editMenu = CreateMenu();
     HMENU lineMenu = CreateMenu();
 
-    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_NEW, L"&New");
-    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"&Open");
+    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_NEW, L"New");
+    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"Open");
     AppendMenuW(fileMenu, MF_SEPARATOR, 0, NULL);
-    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_QUIT, L"&Quit");
+    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_QUIT, L"Quit");
 
     AppendMenuW(editMenu, MF_STRING, IDM_EDIT_CHOOSECOLOR, L"Choose color");
 
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fileMenu, L"&File");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)editMenu, L"&Edit");
 
-
-    AppendMenuW(lineMenu, MF_STRING, IDM_FILE_NEW, L"&midPoint");
-    AppendMenuW(lineMenu, MF_STRING, IDM_FILE_OPEN, L"&DDA");
-    AppendMenuW(lineMenu, MF_STRING, IDM_FILE_QUIT, L"&Parmetric");
+    AppendMenuW(lineMenu, MF_STRING, IDM_LINE_MIDPOINT, L"MidPoint");
+    AppendMenuW(lineMenu, MF_STRING, IDM_LINE_DDA, L"DDA");
+    AppendMenuW(lineMenu, MF_STRING, IDM_LINE_PARAMETRIC, L"Parmetric");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)lineMenu, L"&Line");
     return hMenubar;
 }
