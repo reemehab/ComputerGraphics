@@ -8,7 +8,10 @@
 #define IDM_FILE_OPEN 2
 #define IDM_FILE_QUIT 3
 
+#define IDM_EDIT_CHOOSECOLOR 4
+
 #include <tchar.h>
+#include <iostream>
 #include <windows.h>
 
 /*  Declare Windows procedure  */
@@ -19,6 +22,15 @@ HMENU CreateMenus();
 
 /*  Make the class name into a global variable  */
 TCHAR szClassName[] = _T("CodeBlocksWindowsApp");
+
+HCURSOR cNormal = LoadCursor(NULL, IDC_ARROW);
+HCURSOR cPlus = LoadCursor(NULL, IDC_CROSS);
+
+HCURSOR currentCursor = cNormal;
+
+CHOOSECOLOR colorChosen;
+COLORREF acrCustClr[16];
+COLORREF rgbCurrent; 
 
 int WINAPI WinMain(HINSTANCE hThisInstance,
                    HINSTANCE hPrevInstance,
@@ -44,7 +56,7 @@ int WINAPI WinMain(HINSTANCE hThisInstance,
     wincl.cbClsExtra = 0;      /* No extra bytes after the window class */
     wincl.cbWndExtra = 0;      /* structure or the window instance */
     /* Use Windows's default colour as the background of the window */
-    wincl.hbrBackground = (HBRUSH)COLOR_BACKGROUND;
+    wincl.hbrBackground = CreateSolidBrush(RGB(255, 255, 255));
 
     /* Register the window class, and if it fails quit the program */
     if (!RegisterClassEx(&wincl))
@@ -66,6 +78,13 @@ int WINAPI WinMain(HINSTANCE hThisInstance,
         NULL                             /* No Window Creation data */
     );
 
+    ZeroMemory(&colorChosen, sizeof(colorChosen));
+    colorChosen.lStructSize = sizeof(colorChosen);
+    colorChosen.hwndOwner = hwnd;
+    colorChosen.lpCustColors = (LPDWORD) acrCustClr;
+    colorChosen.rgbResult = rgbCurrent;
+    colorChosen.Flags = CC_FULLOPEN | CC_RGBINIT;
+
     /* Make the window visible on the screen */
     ShowWindow(hwnd, nCmdShow);
 
@@ -86,8 +105,23 @@ int WINAPI WinMain(HINSTANCE hThisInstance,
 
 LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    HDC hdc = GetDC(hwnd);
     switch (message) /* handle the messages */
     {
+    case WM_COMMAND:
+          switch(LOWORD(wParam)) {
+              case IDM_EDIT_CHOOSECOLOR:
+                if (ChooseColor(&colorChosen) == TRUE) {
+                    rgbCurrent = colorChosen.rgbResult;
+                }
+                
+                break;
+           }
+           
+           break;
+    case WM_SETCURSOR:
+        SetCursor(currentCursor);
+        break;
     case WM_DESTROY:
         PostQuitMessage(0); /* send a WM_QUIT to the message queue */
         break;
@@ -101,16 +135,21 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 HMENU CreateMenus()
 {
     HMENU hMenubar;
-    HMENU hMenu;
+    HMENU fileMenu;
+    HMENU editMenu;
 
     hMenubar = CreateMenu();
-    hMenu = CreateMenu();
+    fileMenu = CreateMenu();
+    editMenu = CreateMenu();
 
-    AppendMenuW(hMenu, MF_STRING, IDM_FILE_NEW, L"&New");
-    AppendMenuW(hMenu, MF_STRING, IDM_FILE_OPEN, L"&Open");
-    AppendMenuW(hMenu, MF_SEPARATOR, 0, NULL);
-    AppendMenuW(hMenu, MF_STRING, IDM_FILE_QUIT, L"&Quit");
+    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_NEW, L"&New");
+    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"&Open");
+    AppendMenuW(fileMenu, MF_SEPARATOR, 0, NULL);
+    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_QUIT, L"&Quit");
 
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)hMenu, L"&File");
+    AppendMenuW(editMenu, MF_STRING, IDM_EDIT_CHOOSECOLOR, L"Choose color");
+
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fileMenu, L"&File");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)editMenu, L"&Edit");
     return hMenubar;
 }
