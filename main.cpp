@@ -10,25 +10,26 @@
 #define IDM_FILE_QUIT 3
 
 #define IDM_EDIT_CHOOSECOLOR 4
+#define IDM_EDIT_CLEAR 5
 
-#define IDM_LINE_MIDPOINT 5
-#define IDM_LINE_DDA 6
-#define IDM_LINE_PARAMETRIC 7
+#define IDM_LINE_MIDPOINT 6
+#define IDM_LINE_DDA 7
+#define IDM_LINE_PARAMETRIC 8
 
-#define IDM_Recursive_Fill 8
-#define IDM_Non_Recursive_Fill 9
+#define IDM_Recursive_Fill 9
+#define IDM_Non_Recursive_Fill 10
 
-#define CircleWindow 10
-#define IDM_rectangleClipping 11
-#define IDM_squareClipping 12
+#define CircleWindow 11
+#define IDM_rectangleClipping 12
+#define IDM_squareClipping 13
 
-#define IDM_CIRCLE_DIRECT 13
-#define IDM_CIRCLE_POLAR 14
-#define IDM_CIRCLE_ITERATIVEPOLAR 15
-#define IDM_CIRCLE_MIDPOINT 16
-#define IDM_CIRCLE_MODIFIEDMIDPOINT 17
+#define IDM_CIRCLE_DIRECT 14
+#define IDM_CIRCLE_POLAR 15
+#define IDM_CIRCLE_ITERATIVEPOLAR 16
+#define IDM_CIRCLE_MIDPOINT 17
+#define IDM_CIRCLE_MODIFIEDMIDPOINT 18
 
-#define IDM_GENERATE_POLYGON 18
+#define IDM_GENERATE_POLYGON 19
 
 #include <tchar.h>
 #include <windows.h>
@@ -48,7 +49,7 @@ TCHAR szClassName[] = _T("CodeBlocksWindowsApp");
 HCURSOR cNormal = LoadCursor(NULL, IDC_ARROW);
 HCURSOR cPlus = LoadCursor(NULL, IDC_CROSS);
 
-HCURSOR currentCursor = cNormal;
+HCURSOR* currentCursor = NULL;
 
 CHOOSECOLOR colorChosen;
 COLORREF acrCustClr[16];
@@ -543,6 +544,21 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             }
 
             break;
+        case IDM_EDIT_CLEAR:
+            {
+                int h = GetDeviceCaps(hdc, VERTRES);
+                int w = GetDeviceCaps(hdc, HORZRES);
+
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        SetPixel(hdc, x, y, RGB(255, 255, 255));
+                    }
+                }
+                
+            }
+            break;
         case IDM_LINE_DDA:
         case IDM_LINE_MIDPOINT:
         case IDM_LINE_PARAMETRIC:
@@ -559,14 +575,17 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case CircleWindow:
             currentFunction = LOWORD(wParam);
             points.clear();
-            currentCursor = cPlus;
+            currentCursor = &cPlus;
             break;
 
         }
 
         break;
     case WM_SETCURSOR:
-        SetCursor(currentCursor);
+        if (currentCursor != NULL)
+            SetCursor(*currentCursor);
+        else
+            return DefWindowProc(hwnd, message, wParam, lParam);
         break;
     case WM_LBUTTONUP:
     {
@@ -588,7 +607,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 {
                     lineDDA(hdc, points[0], points[1], rgbCurrent);
                 }
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
@@ -603,19 +622,14 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 if(rectangleWindow)
                 {
                     CohenSuth( hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y,3,rgbCurrent);
-
                 }
                 else
                 {
 
                     MidPointLine(hdc, points[0], points[1], rgbCurrent);
                 }
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
-                points.clear();
-            }
-            break;
-        case IDM_LINE_PARAMETRIC:
             points.push_back(p);
             if (points.size() == 2)
             {
@@ -628,7 +642,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 {
                     paremetricLine(hdc, (double)points[0].x, (double)points[0].y, (double)points[1].x, (double)points[1].y, rgbCurrent);
                 }
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
@@ -643,7 +657,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                      generatePolygon(hdc,points,5,window,rgbCurrent);
 
                 }
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
 
@@ -655,7 +669,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             {
                 R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
                 circleDirect(hdc,points[0].x,points[0].y,R,rgbCurrent);
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
@@ -667,7 +681,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             {
                 R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
                 circlePolar(hdc,points[0].x,points[0].y,R,rgbCurrent);
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
@@ -679,7 +693,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             {
                 R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
                 circleIterativePolar(hdc,points[0].x,points[0].y,R,rgbCurrent);
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
@@ -692,7 +706,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             {
                 R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
                 circleMidPoint(hdc,points[0].x,points[0].y,R,rgbCurrent);
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
@@ -706,21 +720,21 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             {
                 R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
                 circleMidPointModified(hdc,points[0].x,points[0].y,R,rgbCurrent);
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
             break;
         case IDM_Recursive_Fill:
             Recursive_FloodFill(hdc,p,GetPixel(hdc,p.x,p.y),rgbCurrent);
-            currentCursor = cNormal;
+            currentCursor = NULL;
             currentFunction = -1;
             points.clear();
 
             break;
         case IDM_Non_Recursive_Fill:
             non_recursiveFloodFill(hdc,p,rgbCurrent);
-            currentCursor = cNormal;
+            currentCursor = NULL;
             currentFunction = -1;
             points.clear();
             break;
@@ -731,7 +745,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             {
                 Rectangle(hdc,points[0].x,points[0].y,points[1].x,points[1].y);
                 rectangleWindow=true;
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
@@ -743,7 +757,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
                 circleDirect(hdc,points[0].x,points[0].y,R,rgbCurrent);
                 circleWindow=true;
-                currentCursor = cNormal;
+                currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
@@ -778,6 +792,7 @@ HMENU CreateMenus()
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_QUIT, L"Quit");
 
     AppendMenuW(editMenu, MF_STRING, IDM_EDIT_CHOOSECOLOR, L"Choose color");
+    AppendMenuW(editMenu, MF_STRING, IDM_EDIT_CLEAR, L"Clear");
 
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fileMenu, L"&File");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)editMenu, L"&Edit");
