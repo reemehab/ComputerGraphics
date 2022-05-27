@@ -1,6 +1,8 @@
 # depslib dependency file v1.0
-1653595887 source:d:\level3\cg\assigments\project\project\computergraphics\main.cpp
+1653681947 source:d:\level3\cg\assigments\project\project\computergraphics\main.cpp
 	<tchar.h>
 	<windows.h>
+	<vector>
 	<iostream>
+	<stack>
 

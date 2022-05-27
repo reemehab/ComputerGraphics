@@ -14,10 +14,14 @@
 #define IDM_LINE_DDA 6
 #define IDM_LINE_PARAMETRIC 7
 
+#define IDM_Recursive_Fill 8
+#define IDM_Non_Recursive_Fill 9
+
 #include <tchar.h>
 #include <windows.h>
 #include <vector>
 #include <iostream>
+#include <stack>
 using namespace std;
 /*  Declare Windows procedure  */
 LRESULT CALLBACK WindowProcedure(HWND, UINT, WPARAM, LPARAM);
@@ -69,19 +73,19 @@ int WINAPI WinMain(HINSTANCE hThisInstance,
 
     /* The class is registered, let's create the program*/
     hwnd = CreateWindowEx(
-        0,                               /* Extended possibilites for variation */
-        szClassName,                     /* Classname */
-        _T("Computer Graphics Project"), /* Title Text */
-        WS_OVERLAPPEDWINDOW,             /* default window */
-        CW_USEDEFAULT,                   /* Windows decides the position */
-        CW_USEDEFAULT,                   /* where the window ends up on the screen */
-        544,                             /* The programs width */
-        375,                             /* and height in pixels */
-        HWND_DESKTOP,                    /* The window is a child-window to desktop */
-        CreateMenus(),                   /* Menu bar */
-        hThisInstance,                   /* Program Instance handler */
-        NULL                             /* No Window Creation data */
-    );
+               0,                               /* Extended possibilites for variation */
+               szClassName,                     /* Classname */
+               _T("Computer Graphics Project"), /* Title Text */
+               WS_OVERLAPPEDWINDOW,             /* default window */
+               CW_USEDEFAULT,                   /* Windows decides the position */
+               CW_USEDEFAULT,                   /* where the window ends up on the screen */
+               544,                             /* The programs width */
+               375,                             /* and height in pixels */
+               HWND_DESKTOP,                    /* The window is a child-window to desktop */
+               CreateMenus(),                   /* Menu bar */
+               hThisInstance,                   /* Program Instance handler */
+               NULL                             /* No Window Creation data */
+           );
 
     ZeroMemory(&colorChosen, sizeof(colorChosen));
     colorChosen.lStructSize = sizeof(colorChosen);
@@ -114,31 +118,28 @@ struct point
 {
     int x, y;
 };
-void swap(double x1, double y1, double x2, double y2)
+void swap(point p1,point p2)
 {
-    double temp = 0;
-    temp = x1;
-    x2 = x1;
-    x1 = temp;
-    temp = y1;
-    y1 = y2;
-    y2 = temp;
+    point temp=p1;
+    p1=p2;
+    p2=temp;
 }
-void lineDDA(HDC hdc, int x1, int y1, int x2, int y2, COLORREF c)
+void lineDDA(HDC hdc, point p1, point p2, COLORREF c)
 {
-    int dx = x2 - x1;
-    int dy = y2 - y1;
+    cout << " LineDDA with X1 = " << p1.x << " Y1 = " << p1.y << " X2 = " << p2.x << " Y2 = " << p2.y << endl;
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
     if (abs(dy) <= abs(dx)) /// slope < 1
     {
-        if (x1 > x2)
+        if (p1.x > p2.x)
         {
-            swap(x1, y1, x2, y2);
+            swap(p1,p2);
         }
-        int x = x1;
-        double y = y1;
+        int x = p1.x;
+        double y = p1.y;
         double m = (double)dy / dx;
-        SetPixel(hdc, x, y1, c);
-        while (x < x2)
+        SetPixel(hdc, x, Round(y), c);
+        while (x < p2.x)
         {
             x++;
             y += m;
@@ -147,46 +148,73 @@ void lineDDA(HDC hdc, int x1, int y1, int x2, int y2, COLORREF c)
     }
     else /// slope > 1
     {
-        if (y1 > y2)
+        if (p1.y > p2.y)
         {
-            swap(x1, y1, x2, y2);
+            swap(p1,p2);
         }
-        double x = x1;
-        int y = y2;
+        double x = p1.x;
+        int y = p1.y;
         double minV = dx / dy;
-        SetPixel(hdc, x1, y1, c);
-        while (y < y2)
+        SetPixel(hdc, Round(x), y, c);
+        while (y < p2.y)
         {
             y++;
-            ;
             x += minV;
             SetPixel(hdc, Round(x), y, c);
         }
     }
 }
-void MidPointLine(HDC hdc, int x1, int y1, int x2, int y2, COLORREF c)
+
+void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
 {
-    cout << "X1 " << x1 << " Y1 " << y1 << "X2" << x2 << "Y2" << y2 << endl;
-    int dx = x2 - x1;
-    int dy = y2 - y1;
-
-    if (dy <= dx) /// slope  <1
+    cout << " Midpoint Line with X1 = " << p1.x << " Y1 = " << p1.y << " X2 = " << p2.x << " Y2 = " << p2.y << endl;
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
+    double slope = dy/dx;
+    if (abs(dy)<= abs(dx)) /// slope  <1
     {
-        if (x1 > x2)
+        if (p1.x > p2.x)
         {
-            swap(x1, y1, x2, y2);
+            swap(p1,p2);
         }
-
+        int x = p1.x, y = p1.y;
         int d = dx - 2 * dy;
-        int x = x1, y = y1;
-        int d1 = -2 * (dx - dy);
+        int d1 = 2 * (dx - dy);
         int d2 = -2 * dy;
         SetPixel(hdc, x, y, c);
-        while (x < x2)
+        while (x < p2.x)
         {
             if (d <= 0)
             {
                 x++;
+                y++;
+                d += d1;
+
+            }
+            else
+            {
+                d += d2;
+                x++;
+            }
+            SetPixel(hdc, x, y, c);
+        }
+    }
+    else /// slope > 1
+    {
+        int d = 2 * dx - dy;
+        int d1 = 2 * dx;
+        int d2 = 2 * dx - 2 * dy;
+        if (p1.y > p2.y)
+        {
+            swap(p1,p2);
+        }
+        int x = p1.x, y = p1.y;
+        SetPixel(hdc, x, y, c);
+
+        while (y < p2.y)
+        {
+            if (d <= 0)
+            {
                 y++;
                 d += d1;
             }
@@ -194,46 +222,17 @@ void MidPointLine(HDC hdc, int x1, int y1, int x2, int y2, COLORREF c)
             {
                 d += d2;
                 x++;
+                y++;
             }
 
             SetPixel(hdc, x, y, c);
         }
-    }
-    else if (dx < dy) /// slope > 1
-    {
-        int d = 2 * dx - dy;
-        if (y1 > y2)
-        {
-            swap(x1, y1, x2, y2);
-        }
-        int x = x1, y = y1;
-        while (y1 < y2)
-        {
-            int d = 2 * dx - dy;
-            int d1 = 2 * dx;
-            int d2 = 2 * dx - 2 * dy;
-            SetPixel(hdc, x, y, c);
-            while (y < y2)
-            {
-                if (d <= 0)
-                {
-                    y++;
-                    d += d1;
-                }
-                else
-                {
-                    d += d2;
-                    x++;
-                    y++;
-                }
 
-                SetPixel(hdc, x, y, c);
-            }
-        }
     }
 }
 void paremetricLine(HDC hdc, double x1, double y1, double x2, double y2, COLORREF c)
 {
+    cout << " ParametricLine with X1 = " << x1 << " Y1 = " << y1 << " X2 = " << x2 << " Y2 = " << y2 << endl;
     double x, y;
     for (double t = 0; t < 1; t += 0.0001)
     {
@@ -241,6 +240,54 @@ void paremetricLine(HDC hdc, double x1, double y1, double x2, double y2, COLORRE
         y = y1 + t * (y2 - y1);
         SetPixel(hdc, Round(x), Round(y), c);
     }
+}
+
+void Recursive_FloodFill(HDC hdc,point p, COLORREF currentColor,  COLORREF filledColor)
+{
+    COLORREF c= GetPixel(hdc,p.x,p.y);
+    if(c !=currentColor)
+        return;
+    SetPixel(hdc,p.x,p.y,filledColor);
+    p.x=p.x+1;
+    Recursive_FloodFill(hdc,p,currentColor,filledColor);
+    p.x=p.x-2;
+    Recursive_FloodFill(hdc,p,currentColor,filledColor);
+    p.x=p.x+2; // brg3 el x lel value el 2aslya
+    p.y=p.y+1;
+    Recursive_FloodFill(hdc,p,currentColor,filledColor);
+    p.y=p.y-2;
+    Recursive_FloodFill(hdc,p,currentColor,filledColor);
+    p.y=p.y+2; // brg3 el y lel value el 2aslya
+
+}
+
+void non_recursiveFloodFill(HDC hdc,point p,COLORREF filledColor)
+{
+    stack <point> s;
+    s.push(p);
+    COLORREF c;
+    COLORREF currentColor=GetPixel(hdc,p.x,p.y);
+    while(!s.empty())
+    {
+        p= s.top();
+        s.pop();
+        c=GetPixel(hdc,p.x,p.y);
+        if(currentColor!=c)
+            continue;
+        SetPixel(hdc,p.x,p.y,filledColor);
+        p.y=p.y-1;
+        s.push(p);
+        p.y=p.y+2;
+        s.push(p);
+        p.y=p.y-2; //brg3 el y lel value el adema
+        p.x=p.x-1;
+        s.push(p);
+        p.x=p.x+2;
+        s.push(p);
+        p.x=p.x-2; //brg3 el x lel value el 2aslya
+
+    }
+
 }
 
 int currentFunction = -1;
@@ -265,10 +312,14 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_LINE_DDA:
         case IDM_LINE_MIDPOINT:
         case IDM_LINE_PARAMETRIC:
+        case IDM_Recursive_Fill:
+        case IDM_Non_Recursive_Fill:
+
             currentFunction = LOWORD(wParam);
             points.clear();
             currentCursor = cPlus;
             break;
+
         }
 
         break;
@@ -288,7 +339,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
             if (points.size() == 2)
             {
-                lineDDA(hdc, points[0].x, points[0].y, points[1].x, points[1].y, rgbCurrent);
+                lineDDA(hdc, points[0], points[1], rgbCurrent);
                 currentCursor = cNormal;
                 currentFunction = -1;
                 points.clear();
@@ -299,7 +350,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
             if (points.size() == 2)
             {
-                MidPointLine(hdc, points[0].x, points[0].y, points[1].x, points[1].y, rgbCurrent);
+                MidPointLine(hdc, points[0], points[1], rgbCurrent);
                 currentCursor = cNormal;
                 currentFunction = -1;
                 points.clear();
@@ -315,8 +366,24 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 currentFunction = -1;
                 points.clear();
             }
-            
+
             break;
+        case IDM_Recursive_Fill:
+            Recursive_FloodFill(hdc,p,GetPixel(hdc,p.x,p.y),rgbCurrent);
+            currentCursor = cNormal;
+            currentFunction = -1;
+            points.clear();
+
+            break;
+        case IDM_Non_Recursive_Fill:
+            non_recursiveFloodFill(hdc,p,rgbCurrent);
+
+            currentCursor = cNormal;
+            currentFunction = -1;
+            points.clear();
+
+            break;
+
         }
     }
     break;
@@ -336,6 +403,9 @@ HMENU CreateMenus()
     HMENU fileMenu = CreateMenu();
     HMENU editMenu = CreateMenu();
     HMENU lineMenu = CreateMenu();
+    HMENU fillingMenu = CreateMenu();
+
+
 
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_NEW, L"New");
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"Open");
@@ -351,5 +421,11 @@ HMENU CreateMenus()
     AppendMenuW(lineMenu, MF_STRING, IDM_LINE_DDA, L"DDA");
     AppendMenuW(lineMenu, MF_STRING, IDM_LINE_PARAMETRIC, L"Parmetric");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)lineMenu, L"&Line");
+
+    AppendMenuW(fillingMenu, MF_STRING, IDM_Non_Recursive_Fill, L"Non-Recursive_Flood_fill");
+    AppendMenuW(fillingMenu, MF_STRING, IDM_Recursive_Fill, L"Recursive_Flood_Fill");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillingMenu, L"&Filling");
+
+
     return hMenubar;
 }
