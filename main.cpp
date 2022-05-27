@@ -3,17 +3,18 @@
 #elif defined(_UNICODE) && !defined(UNICODE)
 #define UNICODE
 #endif
-
 #define IDM_FILE_NEW 1
 #define IDM_FILE_OPEN 2
 #define IDM_FILE_QUIT 3
-
 #define IDM_EDIT_CHOOSECOLOR 4
-
 #define IDM_LINE_MIDPOINT 5
 #define IDM_LINE_DDA 6
 #define IDM_LINE_PARAMETRIC 7
-
+#define IDM_CIRCLE_DIRECT 8
+#define IDM_CIRCLE_POLAR 9
+#define IDM_CIRCLE_ITERATIVEPOLAR 10
+#define IDM_CIRCLE_MIDPOINT 11
+#define IDM_CIRCLE_MODIFIEDMIDPOINT 12
 #include <tchar.h>
 #include <windows.h>
 #include <vector>
@@ -256,7 +257,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         switch (LOWORD(wParam))
         {
         case IDM_EDIT_CHOOSECOLOR:
-            if (ChooseColor(&colorChosen) == TRUE)
+            //if (ChooseColor(&colorChosen) == TRUE)
             {
                 rgbCurrent = colorChosen.rgbResult;
             }
@@ -315,7 +316,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 currentFunction = -1;
                 points.clear();
             }
-            
+
             break;
         }
     }
@@ -336,7 +337,7 @@ HMENU CreateMenus()
     HMENU fileMenu = CreateMenu();
     HMENU editMenu = CreateMenu();
     HMENU lineMenu = CreateMenu();
-
+    HMENU circleMenu = CreateMenu();
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_NEW, L"New");
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"Open");
     AppendMenuW(fileMenu, MF_SEPARATOR, 0, NULL);
@@ -351,5 +352,12 @@ HMENU CreateMenus()
     AppendMenuW(lineMenu, MF_STRING, IDM_LINE_DDA, L"DDA");
     AppendMenuW(lineMenu, MF_STRING, IDM_LINE_PARAMETRIC, L"Parmetric");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)lineMenu, L"&Line");
+
+    AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_DIRECT, L"Direct");
+    AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_POLAR, L"Polar");
+    AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_ITERATIVEPOLAR, L"Iterative Polar");
+    AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MIDPOINT, L"Midpoint");
+    AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MODIFIEDMIDPOINT, L"Modified Midpoint");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)circleMenu, L"&Circle");
     return hMenubar;
 }
