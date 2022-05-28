@@ -17,6 +17,9 @@
 #define IDM_Recursive_Fill 8
 #define IDM_Non_Recursive_Fill 9
 
+#define IDM_rectangleClipping 10
+#define IDM_squareClipping 11
+
 #include <tchar.h>
 #include <windows.h>
 #include <vector>
@@ -124,6 +127,8 @@ void swap(point p1,point p2)
     p1=p2;
     p2=temp;
 }
+
+///----------------LineAlgorithms--------------------------
 void lineDDA(HDC hdc, point p1, point p2, COLORREF c)
 {
     cout << " LineDDA with X1 = " << p1.x << " Y1 = " << p1.y << " X2 = " << p2.x << " Y2 = " << p2.y << endl;
@@ -241,7 +246,7 @@ void paremetricLine(HDC hdc, double x1, double y1, double x2, double y2, COLORRE
         SetPixel(hdc, Round(x), Round(y), c);
     }
 }
-
+///---------------------------------Flood-Fill-------------------------------------
 void Recursive_FloodFill(HDC hdc,point p, COLORREF currentColor,  COLORREF filledColor)
 {
     COLORREF c= GetPixel(hdc,p.x,p.y);
@@ -290,8 +295,108 @@ void non_recursiveFloodFill(HDC hdc,point p,COLORREF filledColor)
 
 }
 
+///----------------------------------------------clipping-------------------------------------
+///point clipping with a rectangular window
+void PointClipping(HDC hdc,point p,int xleft,int ytop,int xright,int ybottom,COLORREF color)
+{
+    if(p.x>=xleft && p.x<= xright && p.y>=ytop && p.y<=ybottom)
+        SetPixel(hdc,p.x,p.y,color);
+}
+
+///line clipping with a rectangular window
+union OutCode
+{
+    unsigned All : 4;
+    struct
+    {
+        unsigned left : 1,top : 1,right : 1,bottom : 1;
+    };
+};
+OutCode GetOutCode(point p1, int xleft, int ytop, int xright, int ybottom)
+{
+    OutCode out;
+    out.All = 0;
+    if (p1.x < xleft)
+        out.left = 1;
+    else if (p1.x > xright)
+        out.right = 1;
+    if (p1.y < ytop)
+        out.top = 1;
+    else if (p1.y > ybottom)
+        out.bottom = 1;
+    return out;
+}
+
+void VIntersect(point p1,point p2, int x, double* xi, double* yi)
+{
+    *xi = x;
+    *yi = p1.y + (x - p1.x) * (p2.y - p1.y) / (p2.x - p1.x);
+}
+void HIntersect(point p1, point p2, int y, double* xi, double* yi)
+{
+    *yi = y;
+    *xi = p1.x + (y - p1.y) * (p2.x - p1.x) / (p2.y -p1.y);
+}
+void CohenSuth(HDC hdc, point p1, point p2, int xleft, int ytop, int xright, int ybottom,int choice, COLORREF c)
+{
+    point pStart;
+    pStart.x = p1.x;
+    pStart.y = p1.y;
+    point pEnd ;
+    pEnd.x = p2.x;
+    pEnd.y = p2.y;
+
+    OutCode out1 = GetOutCode(pStart, xleft, ytop, xright, ybottom);
+    OutCode out2 = GetOutCode(pEnd, xleft, ytop, xright, ybottom);
+    while ((out1.All || out2.All) && !(out1.All & out2.All))
+    {
+        double xi, yi;
+        if (out1.All)
+        {
+            if (out1.left)
+                VIntersect(pStart, pEnd, xleft, &xi, &yi);
+            else if (out1.top)
+                HIntersect(pStart, pEnd, ytop, &xi, &yi);
+            else if (out1.right)
+                VIntersect(pStart, pEnd, xright, &xi, &yi);
+            else
+                HIntersect(pStart, pEnd, ybottom, &xi, &yi);
+            pStart.x = xi;
+            pStart.y = yi;
+
+            out1 = GetOutCode(pStart, xleft, ytop, xright, ybottom);
+        }
+        else
+        {
+            if (out2.left)
+                VIntersect(pStart, pEnd, xleft, &xi, &yi);
+            else if (out2.top)
+                HIntersect(pStart, pEnd, ytop, &xi, &yi);
+            else if (out2.right)
+                VIntersect(pStart, pEnd, xright, &xi, &yi);
+            else
+                HIntersect(pStart, pEnd, ybottom, &xi, &yi);
+            pEnd.x = xi;
+            pEnd.y = yi;
+            out2 = GetOutCode(pEnd, xleft, ytop, xright, ybottom);
+        }
+    }
+    if (!out1.All && !out2.All)
+    {
+        if(choice==1) ///DDA
+            lineDDA( hdc, pStart, pEnd,  c);
+        else if (choice==2)///parametric line
+            paremetricLine(hdc, Round(pStart.x), Round(pStart.y),Round(pEnd.x), Round(pEnd.y), c);
+
+        else if (choice==3)///midpoint Line
+            MidPointLine(hdc,pStart,pEnd,c);
+    }
+}
 int currentFunction = -1;
 vector<point> points;
+vector<point>window;
+int rectangleWindow=false;
+
 
 /*  This function is called by the Windows function DispatchMessage()  */
 LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -314,7 +419,8 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_LINE_PARAMETRIC:
         case IDM_Recursive_Fill:
         case IDM_Non_Recursive_Fill:
-
+        case IDM_rectangleClipping:
+        case IDM_squareClipping:
             currentFunction = LOWORD(wParam);
             points.clear();
             currentCursor = cPlus;
@@ -339,18 +445,37 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
             if (points.size() == 2)
             {
-                lineDDA(hdc, points[0], points[1], rgbCurrent);
+                if(rectangleWindow)
+                {
+                    CohenSuth( hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y,1,rgbCurrent);
+
+                }
+                else
+                {
+                    lineDDA(hdc, points[0], points[1], rgbCurrent);
+                }
                 currentCursor = cNormal;
                 currentFunction = -1;
                 points.clear();
             }
+
             break;
         case IDM_LINE_MIDPOINT:
             points.push_back(p);
 
             if (points.size() == 2)
             {
-                MidPointLine(hdc, points[0], points[1], rgbCurrent);
+
+                if(rectangleWindow)
+                {
+                    CohenSuth( hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y,3,rgbCurrent);
+
+                }
+                else
+                {
+
+                    MidPointLine(hdc, points[0], points[1], rgbCurrent);
+                }
                 currentCursor = cNormal;
                 currentFunction = -1;
                 points.clear();
@@ -361,7 +486,15 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
             if (points.size() == 2)
             {
-                paremetricLine(hdc, (double)points[0].x, (double)points[0].y, (double)points[1].x, (double)points[1].y, rgbCurrent);
+                if(rectangleWindow)
+                {
+                    CohenSuth( hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y,2,rgbCurrent);
+
+                }
+                else
+                {
+                    paremetricLine(hdc, (double)points[0].x, (double)points[0].y, (double)points[1].x, (double)points[1].y, rgbCurrent);
+                }
                 currentCursor = cNormal;
                 currentFunction = -1;
                 points.clear();
@@ -377,13 +510,22 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             break;
         case IDM_Non_Recursive_Fill:
             non_recursiveFloodFill(hdc,p,rgbCurrent);
-
             currentCursor = cNormal;
             currentFunction = -1;
             points.clear();
-
             break;
-
+        case IDM_rectangleClipping:
+            points.push_back(p);
+            window.push_back(p);
+            if (points.size() == 2)
+            {
+                Rectangle(hdc,points[0].x,points[0].y,points[1].x,points[1].y);
+                rectangleWindow=true;
+                currentCursor = cNormal;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
         }
     }
     break;
@@ -404,6 +546,7 @@ HMENU CreateMenus()
     HMENU editMenu = CreateMenu();
     HMENU lineMenu = CreateMenu();
     HMENU fillingMenu = CreateMenu();
+    HMENU clippingMenu = CreateMenu();
 
 
 
@@ -422,10 +565,13 @@ HMENU CreateMenus()
     AppendMenuW(lineMenu, MF_STRING, IDM_LINE_PARAMETRIC, L"Parmetric");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)lineMenu, L"&Line");
 
-    AppendMenuW(fillingMenu, MF_STRING, IDM_Non_Recursive_Fill, L"Non-Recursive_Flood_fill");
-    AppendMenuW(fillingMenu, MF_STRING, IDM_Recursive_Fill, L"Recursive_Flood_Fill");
+    AppendMenuW(fillingMenu, MF_STRING, IDM_Non_Recursive_Fill, L"Non-RecursiveFlood_fill");
+    AppendMenuW(fillingMenu, MF_STRING, IDM_Recursive_Fill, L"Recursive_FloodFill");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillingMenu, L"&Filling");
 
+    AppendMenuW(clippingMenu, MF_STRING, IDM_rectangleClipping, L"RectangleWindow");
+    AppendMenuW(clippingMenu, MF_STRING, IDM_squareClipping, L"SquareWindow");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)clippingMenu, L"&Clipping");
 
     return hMenubar;
 }
