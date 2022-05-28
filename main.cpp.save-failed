@@ -132,6 +132,14 @@ void Draw8points(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
     SetPixel(hdc,xc-x,yc+y,color);
     SetPixel(hdc,xc-x,yc-y,color);
     SetPixel(hdc,xc+x,yc-y,color);
+    SetPixel(hdc,xc+y,yc+x,color);
+    SetPixel(hdc,xc-y,yc+x,color);
+    SetPixel(hdc,xc-y,yc-x,color);
+    SetPixel(hdc,xc+y,yc-x,color);
+
+
+}
+
 void circleDirect(HDC hdc,int xc,int yc,int R,COLORREF color) //Direct
 {
     double dtheta=1.0/R;
@@ -168,7 +176,7 @@ void circleMidPointModified(HDC hdc, int xc, int yc, int R, COLORREF color )// m
     int x = 0, y = R;
     int d = 1 - R;
     int d1 = 3, d2 = 5 - 2 * R;
-    Draw8points(hdc, xc, yc, x, y, color);
+    Draw_8_points(hdc, xc, yc, x, y, color);
     while (x < y)
     {
         if (d <= 0)
@@ -185,7 +193,7 @@ void circleMidPointModified(HDC hdc, int xc, int yc, int R, COLORREF color )// m
         }
         x++;
         d1 += 2;
-        Draw8points(hdc, xc, yc, x, y, color);
+        Draw_8_points(hdc, xc, yc, x, y, color);
     }
 }
 void circlePolar(HDC hdc,int xc,int yc,int R,COLORREF color) //Polar
