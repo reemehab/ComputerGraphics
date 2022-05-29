@@ -549,13 +549,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 int h = GetDeviceCaps(hdc, VERTRES);
                 int w = GetDeviceCaps(hdc, HORZRES);
 
-                for (int y = 0; y < h; y++)
-                {
-                    for (int x = 0; x < w; x++)
-                    {
-                        SetPixel(hdc, x, y, RGB(255, 255, 255));
-                    }
-                }
+                Rectangle(hdc,-1,-1,w,h);
 
             }
             break;
