@@ -282,16 +282,10 @@ void Recursive_FloodFill(HDC hdc,point p, COLORREF currentColor,  COLORREF fille
     if(c !=currentColor)
         return;
     SetPixel(hdc,p.x,p.y,filledColor);
-    p.x=p.x+1;
-    Recursive_FloodFill(hdc,p,currentColor,filledColor);
-    p.x=p.x-2;
-    Recursive_FloodFill(hdc,p,currentColor,filledColor);
-    p.x=p.x+2; // brg3 el x lel value el 2aslya
-    p.y=p.y+1;
-    Recursive_FloodFill(hdc,p,currentColor,filledColor);
-    p.y=p.y-2;
-    Recursive_FloodFill(hdc,p,currentColor,filledColor);
-    p.y=p.y+2; // brg3 el y lel value el 2aslya
+    Recursive_FloodFill(hdc,{p.x + 1, p.y},currentColor,filledColor);
+    Recursive_FloodFill(hdc,{p.x, p.y + 1},currentColor,filledColor);
+    Recursive_FloodFill(hdc,{p.x - 1, p.y},currentColor,filledColor);
+    Recursive_FloodFill(hdc,{p.x, p.y - 1},currentColor,filledColor);
 
 }
 
@@ -309,17 +303,10 @@ void non_recursiveFloodFill(HDC hdc,point p,COLORREF filledColor)
         if(currentColor!=c)
             continue;
         SetPixel(hdc,p.x,p.y,filledColor);
-        p.y=p.y-1;
-        s.push(p);
-        p.y=p.y+2;
-        s.push(p);
-        p.y=p.y-2; //brg3 el y lel value el adema
-        p.x=p.x-1;
-        s.push(p);
-        p.x=p.x+2;
-        s.push(p);
-        p.x=p.x-2; //brg3 el x lel value el 2aslya
-
+        s.push({p.x + 1, p.y});
+        s.push({p.x, p.y + 1});
+        s.push({p.x - 1, p.y});
+        s.push({p.x, p.y - 1});
     }
 
 }
