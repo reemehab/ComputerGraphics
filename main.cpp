@@ -504,22 +504,34 @@ void CohenSuth(HDC hdc, point p1, point p2, int xleft, int ytop, int xright, int
     }
 }
 ///------generating polygon--------------
-void generatePolygon(HDC hdc ,vector<point> p ,int n, COLORREF color){
-for(int i=0 ; i< n-1 ; i++){
+void generatePolygon(HDC hdc ,vector<point> p, COLORREF color){
+for(int i=0 ; i< p.size()-1 ; i++){
     paremetricLine(hdc,p[i].x,p[i].y,p[i+1].x,p[i+1].y,color);
 
 }
-    paremetricLine(hdc,p[0].x,p[0].y,p[n-1].x,p[n-1].y,color);
+    paremetricLine(hdc,p[0].x,p[0].y,p[p.size()-1].x,p[p.size()-1].y,color);
 
 }
 
-void generatePolygon(HDC hdc ,vector<point> p ,int n, vector<point> window, COLORREF color){
-for(int i=0 ; i< n-1 ; i++){
+void generatePolygon(HDC hdc ,vector<point> p, vector<point> window, COLORREF color){
+for(int i=0 ; i< p.size()-1 ; i++){
     CohenSuth( hdc, p[i], p[i+1], window[0].x, window[0].y, window[1].x, window[1].y,2,rgbCurrent);
 
 }
-    CohenSuth( hdc,p[0], p[n-1], window[0].x, window[0].y, window[1].x, window[1].y,2,rgbCurrent);
+    CohenSuth( hdc,p[0], p[p.size()-1], window[0].x, window[0].y, window[1].x, window[1].y,2,rgbCurrent);
 
+}
+
+void generateRectangle(HDC hdc, point p0, point p1, COLORREF color) {
+    vector<point> points;
+    point px {p0.x, p1.y};
+    point py {p1.x, p0.y};
+    points.push_back(p0);
+    points.push_back(px);
+    points.push_back(p1);
+    points.push_back(py);
+
+    generatePolygon(hdc, points, color);
 }
 
 int currentFunction = -1;
@@ -651,9 +663,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 points.push_back(p);
                 if(points.size()==5){
                 if(!rectangleWindow){
-                generatePolygon(hdc,points,5,rgbCurrent);}
+                generatePolygon(hdc,points,rgbCurrent);}
                 else {
-                     generatePolygon(hdc,points,5,window,rgbCurrent);
+                     generatePolygon(hdc,points,window,rgbCurrent);
 
                 }
                 currentCursor = NULL;
@@ -742,7 +754,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             window.push_back(p);
             if (points.size() == 2)
             {
-                Rectangle(hdc,points[0].x,points[0].y,points[1].x,points[1].y);
+                generateRectangle(hdc,points[0],points[1], rgbCurrent);
                 rectangleWindow=true;
                 currentCursor = NULL;
                 currentFunction = -1;
