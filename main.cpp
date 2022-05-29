@@ -204,8 +204,7 @@ void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
     cout << " Midpoint Line with X1 = " << p1.x << " Y1 = " << p1.y << " X2 = " << p2.x << " Y2 = " << p2.y << endl;
     int dx = p2.x - p1.x;
     int dy = p2.y - p1.y;
-    double slope = dy/dx;
-    if (abs(dy)<= abs(dx)) /// slope  <1
+    if ((dx >= 0 && 0 <= dy && dy <= dx) || (dx < 0 && 0 >= dy && dy >= dx)) /// 0 < slope < 1
     {
         if (p1.x > p2.x)
         {
@@ -222,24 +221,19 @@ void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
         {
             if (d <= 0)
             {
-                x++;
-                y++;
                 d += d1;
-
+                y++;
             }
             else
             {
                 d += d2;
-                x++;
             }
+            x++;
             SetPixel(hdc, x, y, c);
         }
     }
-    else /// slope > 1
+    else if ((dx >= 0 && dy > dx) || (dx < 0 && dy < dx)) /// slope > 1
     {
-        int d = 2 * dx - dy;
-        int d1 = 2 * dx;
-        int d2 = 2 * dx - 2 * dy;
         if (p1.y > p2.y)
         {
             swap(p1,p2);
@@ -247,25 +241,84 @@ void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
             dy = p2.y - p1.y;
         }
         int x = p1.x, y = p1.y;
+        int d = 2 * dx - dy;
+        int d1 = 2 * dx;
+        int d2 = 2 * dx - 2 * dy;
         SetPixel(hdc, x, y, c);
 
         while (y < p2.y)
         {
             if (d <= 0)
             {
-                y++;
                 d += d1;
             }
             else
             {
                 d += d2;
                 x++;
-                y++;
             }
+            y++;
 
             SetPixel(hdc, x, y, c);
         }
+    }
+    else if ((dx >= 0 && dy < -dx) || (dx < 0 && dy > -dx)) /// slope < -1
+    {
+        if (p1.y > p2.y)
+        {
+            swap(p1,p2);
+            dx = p2.x - p1.x;
+            dy = p2.y - p1.y;
+        }
+        int x = p1.x, y = p1.y;
+        int d = 2 * dx + dy;
+        int d1 = 2 * (dx + dy);
+        int d2 = 2 * dx;
+        SetPixel(hdc, x, y, c);
 
+        while (y < p2.y)
+        {
+            if (d <= 0)
+            {
+                d += d1;
+                x--;
+            }
+            else
+            {
+                d += d2;
+            }
+            y++;
+
+            SetPixel(hdc, x, y, c);
+        }
+    }
+    else 
+    {
+        if (p1.x > p2.x)
+        {
+            swap(p1,p2);
+            dx = p2.x - p1.x;
+            dy = p2.y - p1.y;
+        }
+        int x = p1.x, y = p1.y;
+        int d = - dx - 2 * dy;
+        int d1 = -2 * dy;
+        int d2 = 2 * (- dx - dy);
+        SetPixel(hdc, x, y, c);
+        while (x < p2.x)
+        {
+            if (d <= 0)
+            {
+                d += d1;
+            }
+            else
+            {
+                d += d2;
+                y--;
+            }
+            x++;
+            SetPixel(hdc, x, y, c);
+        }
     }
 }
 void paremetricLine(HDC hdc, double x1, double y1, double x2, double y2, COLORREF c)
@@ -652,7 +705,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         if (currentCursor != NULL)
             SetCursor(*currentCursor);
         else
+        {
+            ReleaseDC(hwnd, hdc);
             return DefWindowProc(hwnd, message, wParam, lParam);
+        }
         break;
     case WM_LBUTTONUP:
     {
@@ -843,9 +899,11 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         PostQuitMessage(0); /* send a WM_QUIT to the message queue */
         break;
     default: /* for messages that we don't deal with */
+        ReleaseDC(hwnd, hdc);
         return DefWindowProc(hwnd, message, wParam, lParam);
     }
 
+    ReleaseDC(hwnd, hdc);
     return 0;
 }
 
