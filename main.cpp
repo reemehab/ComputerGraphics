@@ -20,6 +20,15 @@
 #define IDM_rectangleClipping 10
 #define IDM_squareClipping 11
 
+<<<<<<< Updated upstream
+=======
+#define IDM_CIRCLE_DIRECT 12
+#define IDM_CIRCLE_POLAR 13
+#define IDM_CIRCLE_ITERATIVEPOLAR 14
+#define IDM_CIRCLE_MIDPOINT 15
+#define IDM_CIRCLE_MODIFIEDMIDPOINT 16
+
+>>>>>>> Stashed changes
 #include <tchar.h>
 #include <windows.h>
 #include <vector>
@@ -122,6 +131,13 @@ struct point
     int x, y;
 };
 void swap(point p1,point p2)
+<<<<<<< Updated upstream
+{
+    point temp=p1;
+    p1=p2;
+    p2=temp;
+}
+=======
 {
     point temp=p1;
     p1=p2;
@@ -294,6 +310,364 @@ void non_recursiveFloodFill(HDC hdc,point p,COLORREF filledColor)
     }
 
 }
+///--------------------------------------------circle----------------------------------------
+void Draw8points(HDC hdc,int xc,int yc, int a, int b,COLORREF color)
+{
+
+    SetPixel(hdc, xc+a, yc+b, color);
+    SetPixel(hdc, xc-a, yc+b, color);
+    SetPixel(hdc, xc-a, yc-b, color);
+    SetPixel(hdc, xc+a, yc-b, color);
+    SetPixel(hdc, xc+b, yc+a, color);
+    SetPixel(hdc, xc-b, yc+a, color);
+    SetPixel(hdc, xc-b, yc-a, color);
+    SetPixel(hdc, xc+b, yc-a, color);
+}
+
+void circleDirect(HDC hdc,int xc,int yc,int R,COLORREF color) //Direct
+{
+    double dtheta=1.0/R;
+    for(double theta =0; theta<=6.28319; theta+=dtheta)//360 degrees in redians
+    {
+        int x= Round ( xc + R * cos(theta) );
+        int y = Round (yc + R * sin (theta));
+        SetPixel( hdc, x,y,color );
+    }
+>>>>>>> Stashed changes
+
+///----------------LineAlgorithms--------------------------
+void lineDDA(HDC hdc, point p1, point p2, COLORREF c)
+{
+<<<<<<< Updated upstream
+    cout << " LineDDA with X1 = " << p1.x << " Y1 = " << p1.y << " X2 = " << p2.x << " Y2 = " << p2.y << endl;
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
+    if (abs(dy) <= abs(dx)) /// slope < 1
+    {
+        if (p1.x > p2.x)
+        {
+            swap(p1,p2);
+        }
+        int x = p1.x;
+        double y = p1.y;
+        double m = (double)dy / dx;
+        SetPixel(hdc, x, Round(y), c);
+        while (x < p2.x)
+        {
+            x++;
+            y += m;
+            SetPixel(hdc, x, Round(y), c);
+        }
+    }
+    else /// slope > 1
+    {
+        if (p1.y > p2.y)
+        {
+            swap(p1,p2);
+        }
+        double x = p1.x;
+        int y = p1.y;
+        double minV = dx / dy;
+        SetPixel(hdc, Round(x), y, c);
+        while (y < p2.y)
+        {
+            y++;
+            x += minV;
+            SetPixel(hdc, Round(x), y, c);
+        }
+    }
+}
+
+void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
+{
+    cout << " Midpoint Line with X1 = " << p1.x << " Y1 = " << p1.y << " X2 = " << p2.x << " Y2 = " << p2.y << endl;
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
+    double slope = dy/dx;
+    if (abs(dy)<= abs(dx)) /// slope  <1
+    {
+        if (p1.x > p2.x)
+        {
+            swap(p1,p2);
+        }
+        int x = p1.x, y = p1.y;
+        int d = dx - 2 * dy;
+        int d1 = 2 * (dx - dy);
+        int d2 = -2 * dy;
+        SetPixel(hdc, x, y, c);
+        while (x < p2.x)
+        {
+            if (d <= 0)
+            {
+                x++;
+                y++;
+                d += d1;
+
+            }
+            else
+            {
+                d += d2;
+                x++;
+            }
+            SetPixel(hdc, x, y, c);
+        }
+    }
+    else /// slope > 1
+    {
+        int d = 2 * dx - dy;
+        int d1 = 2 * dx;
+        int d2 = 2 * dx - 2 * dy;
+        if (p1.y > p2.y)
+        {
+            swap(p1,p2);
+        }
+        int x = p1.x, y = p1.y;
+        SetPixel(hdc, x, y, c);
+
+        while (y < p2.y)
+        {
+            if (d <= 0)
+            {
+                y++;
+                d += d1;
+            }
+            else
+            {
+                d += d2;
+                x++;
+                y++;
+            }
+
+            SetPixel(hdc, x, y, c);
+=======
+    int x = 0, y = R,d = 1 - R;
+    Draw8points(hdc, xc, yc, x, y, color);
+    while (x < y)
+    {
+        if (d <= 0)
+        {
+            d += 2 * x + 3;
+        }
+        else
+        {
+            d += 2 * (x - y) + 5;
+            y--;
+        }
+        x++;
+        Draw8points(hdc, xc, yc, x, y, color);
+    }
+}
+void circleMidPointModified(HDC hdc, int xc, int yc, int R, COLORREF color )// modified Midpoint
+{
+    int x = 0, y = R;
+    int d = 1 - R;
+    int d1 = 3, d2 = 5 - 2 * R;
+    Draw8points(hdc, xc, yc, x, y, color);
+    while (x < y)
+    {
+        if (d <= 0)
+        {
+            d += d1;
+            d2 += 2;
+
+        }
+        else
+        {
+            d += d2;
+            d2 += 4;
+            y--;
+        }
+        x++;
+        d1 += 2;
+        Draw8points(hdc, xc, yc, x, y, color);
+    }
+}
+void circlePolar(HDC hdc,int xc,int yc,int R,COLORREF color) //Polar
+{
+    double theta = 0.0, x=R, y=0;
+    Draw8points(hdc,xc,yc,x,y,color);
+    while(x>y)
+    {
+        theta+=1.0/R;
+        x=R*cos(theta);
+        y=R*sin(theta);
+        Draw8points(hdc,xc,yc,Round(x),Round(y),color);
+    }
+}
+void circleIterativePolar(HDC hdc,int xc,int yc,int R,COLORREF color) // Iterative Polar
+{
+    double dtheta = 1.0 / R, x=R, y=0, c=cos(dtheta), s=sin(dtheta);
+    Draw8points(hdc,xc,yc,x,y,color);
+    while(x>y)
+    {
+        double x1=x*c-y*s;
+        y=x*s+y*c;
+        x=x1;
+        Draw8points(hdc,xc,yc,Round(x),Round(y),color);
+    }
+}
+double CalcRadius(int Xc, int Yc, int X,int Y  )
+{
+    return sqrt((X-Xc)*(X-Xc)+(Y-Yc)*(Y-Yc));
+}
+
+///----------------------------------------------clipping-------------------------------------
+///point clipping with a rectangular window
+void PointClipping(HDC hdc,point p,int xleft,int ytop,int xright,int ybottom,COLORREF color)
+{
+    if(p.x>=xleft && p.x<= xright && p.y>=ytop && p.y<=ybottom)
+        SetPixel(hdc,p.x,p.y,color);
+}
+
+///line clipping with a rectangular window
+union OutCode
+{
+    unsigned All : 4;
+    struct
+    {
+        unsigned left : 1,top : 1,right : 1,bottom : 1;
+    };
+};
+OutCode GetOutCode(point p1, int xleft, int ytop, int xright, int ybottom)
+{
+    OutCode out;
+    out.All = 0;
+    if (p1.x < xleft)
+        out.left = 1;
+    else if (p1.x > xright)
+        out.right = 1;
+    if (p1.y < ytop)
+        out.top = 1;
+    else if (p1.y > ybottom)
+        out.bottom = 1;
+    return out;
+}
+
+void VIntersect(point p1,point p2, int x, double* xi, double* yi)
+{
+    *xi = x;
+    *yi = p1.y + (x - p1.x) * (p2.y - p1.y) / (p2.x - p1.x);
+}
+void HIntersect(point p1, point p2, int y, double* xi, double* yi)
+{
+    *yi = y;
+    *xi = p1.x + (y - p1.y) * (p2.x - p1.x) / (p2.y -p1.y);
+}
+void CohenSuth(HDC hdc, point p1, point p2, int xleft, int ytop, int xright, int ybottom,int choice, COLORREF c)
+{
+    point pStart;
+    pStart.x = p1.x;
+    pStart.y = p1.y;
+    point pEnd ;
+    pEnd.x = p2.x;
+    pEnd.y = p2.y;
+
+    OutCode out1 = GetOutCode(pStart, xleft, ytop, xright, ybottom);
+    OutCode out2 = GetOutCode(pEnd, xleft, ytop, xright, ybottom);
+    while ((out1.All || out2.All) && !(out1.All & out2.All))
+    {
+        double xi, yi;
+        if (out1.All)
+        {
+            if (out1.left)
+                VIntersect(pStart, pEnd, xleft, &xi, &yi);
+            else if (out1.top)
+                HIntersect(pStart, pEnd, ytop, &xi, &yi);
+            else if (out1.right)
+                VIntersect(pStart, pEnd, xright, &xi, &yi);
+            else
+                HIntersect(pStart, pEnd, ybottom, &xi, &yi);
+            pStart.x = xi;
+            pStart.y = yi;
+
+            out1 = GetOutCode(pStart, xleft, ytop, xright, ybottom);
+        }
+        else
+        {
+            if (out2.left)
+                VIntersect(pStart, pEnd, xleft, &xi, &yi);
+            else if (out2.top)
+                HIntersect(pStart, pEnd, ytop, &xi, &yi);
+            else if (out2.right)
+                VIntersect(pStart, pEnd, xright, &xi, &yi);
+            else
+                HIntersect(pStart, pEnd, ybottom, &xi, &yi);
+            pEnd.x = xi;
+            pEnd.y = yi;
+            out2 = GetOutCode(pEnd, xleft, ytop, xright, ybottom);
+>>>>>>> Stashed changes
+        }
+
+    }
+<<<<<<< Updated upstream
+}
+void paremetricLine(HDC hdc, double x1, double y1, double x2, double y2, COLORREF c)
+{
+    cout << " ParametricLine with X1 = " << x1 << " Y1 = " << y1 << " X2 = " << x2 << " Y2 = " << y2 << endl;
+    double x, y;
+    for (double t = 0; t < 1; t += 0.0001)
+=======
+    if (!out1.All && !out2.All)
+>>>>>>> Stashed changes
+    {
+        if(choice==1) ///DDA
+            lineDDA( hdc, pStart, pEnd,  c);
+        else if (choice==2)///parametric line
+            paremetricLine(hdc, Round(pStart.x), Round(pStart.y),Round(pEnd.x), Round(pEnd.y), c);
+
+        else if (choice==3)///midpoint Line
+            MidPointLine(hdc,pStart,pEnd,c);
+    }
+}
+<<<<<<< Updated upstream
+///---------------------------------Flood-Fill-------------------------------------
+void Recursive_FloodFill(HDC hdc,point p, COLORREF currentColor,  COLORREF filledColor)
+{
+    COLORREF c= GetPixel(hdc,p.x,p.y);
+    if(c !=currentColor)
+        return;
+    SetPixel(hdc,p.x,p.y,filledColor);
+    p.x=p.x+1;
+    Recursive_FloodFill(hdc,p,currentColor,filledColor);
+    p.x=p.x-2;
+    Recursive_FloodFill(hdc,p,currentColor,filledColor);
+    p.x=p.x+2; // brg3 el x lel value el 2aslya
+    p.y=p.y+1;
+    Recursive_FloodFill(hdc,p,currentColor,filledColor);
+    p.y=p.y-2;
+    Recursive_FloodFill(hdc,p,currentColor,filledColor);
+    p.y=p.y+2; // brg3 el y lel value el 2aslya
+
+}
+
+void non_recursiveFloodFill(HDC hdc,point p,COLORREF filledColor)
+{
+    stack <point> s;
+    s.push(p);
+    COLORREF c;
+    COLORREF currentColor=GetPixel(hdc,p.x,p.y);
+    while(!s.empty())
+    {
+        p= s.top();
+        s.pop();
+        c=GetPixel(hdc,p.x,p.y);
+        if(currentColor!=c)
+            continue;
+        SetPixel(hdc,p.x,p.y,filledColor);
+        p.y=p.y-1;
+        s.push(p);
+        p.y=p.y+2;
+        s.push(p);
+        p.y=p.y-2; //brg3 el y lel value el adema
+        p.x=p.x-1;
+        s.push(p);
+        p.x=p.x+2;
+        s.push(p);
+        p.x=p.x-2; //brg3 el x lel value el 2aslya
+
+    }
+
+}
 
 ///----------------------------------------------clipping-------------------------------------
 ///point clipping with a rectangular window
@@ -392,12 +766,18 @@ void CohenSuth(HDC hdc, point p1, point p2, int xleft, int ytop, int xright, int
             MidPointLine(hdc,pStart,pEnd,c);
     }
 }
+=======
+>>>>>>> Stashed changes
 int currentFunction = -1;
 vector<point> points;
 vector<point>window;
 int rectangleWindow=false;
+<<<<<<< Updated upstream
 
 
+=======
+int R;
+>>>>>>> Stashed changes
 /*  This function is called by the Windows function DispatchMessage()  */
 LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -421,6 +801,14 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_Non_Recursive_Fill:
         case IDM_rectangleClipping:
         case IDM_squareClipping:
+<<<<<<< Updated upstream
+=======
+        case IDM_CIRCLE_DIRECT:
+        case IDM_CIRCLE_POLAR :
+        case IDM_CIRCLE_ITERATIVEPOLAR :
+        case IDM_CIRCLE_MIDPOINT :
+        case IDM_CIRCLE_MODIFIEDMIDPOINT:
+>>>>>>> Stashed changes
             currentFunction = LOWORD(wParam);
             points.clear();
             currentCursor = cPlus;
@@ -442,13 +830,15 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         {
         case IDM_LINE_DDA:
             points.push_back(p);
-
             if (points.size() == 2)
             {
                 if(rectangleWindow)
                 {
                     CohenSuth( hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y,1,rgbCurrent);
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
                 }
                 else
                 {
@@ -495,12 +885,80 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 {
                     paremetricLine(hdc, (double)points[0].x, (double)points[0].y, (double)points[1].x, (double)points[1].y, rgbCurrent);
                 }
+<<<<<<< Updated upstream
+=======
                 currentCursor = cNormal;
                 currentFunction = -1;
                 points.clear();
             }
 
             break;
+        case IDM_CIRCLE_DIRECT:
+            points.push_back(p);
+            if(points.size() == 2)
+            {
+                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
+                circleDirect(hdc,points[0].x,points[0].y,R,rgbCurrent);
+                currentCursor = cNormal;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+
+        case IDM_CIRCLE_POLAR :
+            points.push_back(p);
+            if(points.size() == 2)
+            {
+                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
+                circlePolar(hdc,points[0].x,points[0].y,R,rgbCurrent);
+                currentCursor = cNormal;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+
+        case IDM_CIRCLE_ITERATIVEPOLAR :
+            points.push_back(p);
+            if(points.size() == 2)
+            {
+                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
+                circleIterativePolar(hdc,points[0].x,points[0].y,R,rgbCurrent);
+                currentCursor = cNormal;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+
+        case IDM_CIRCLE_MIDPOINT :
+            points.push_back(p);
+
+            if(points.size() == 2)
+            {
+                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
+                circleMidPoint(hdc,points[0].x,points[0].y,R,rgbCurrent);
+>>>>>>> Stashed changes
+                currentCursor = cNormal;
+                currentFunction = -1;
+                points.clear();
+            }
+
+            break;
+<<<<<<< Updated upstream
+=======
+
+        case IDM_CIRCLE_MODIFIEDMIDPOINT:
+            points.push_back(p);
+
+            if(points.size() == 2)
+            {
+                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
+                circleMidPointModified(hdc,points[0].x,points[0].y,R,rgbCurrent);
+                currentCursor = cNormal;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+>>>>>>> Stashed changes
         case IDM_Recursive_Fill:
             Recursive_FloodFill(hdc,p,GetPixel(hdc,p.x,p.y),rgbCurrent);
             currentCursor = cNormal;
@@ -526,6 +984,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 points.clear();
             }
             break;
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
         }
     }
     break;
@@ -547,8 +1009,12 @@ HMENU CreateMenus()
     HMENU lineMenu = CreateMenu();
     HMENU fillingMenu = CreateMenu();
     HMENU clippingMenu = CreateMenu();
+<<<<<<< Updated upstream
 
 
+=======
+    HMENU circleMenu = CreateMenu();
+>>>>>>> Stashed changes
 
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_NEW, L"New");
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"Open");
@@ -573,5 +1039,14 @@ HMENU CreateMenus()
     AppendMenuW(clippingMenu, MF_STRING, IDM_squareClipping, L"SquareWindow");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)clippingMenu, L"&Clipping");
 
+<<<<<<< Updated upstream
+=======
+    AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_DIRECT, L"Direct");
+    AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_POLAR, L"Polar");
+    AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_ITERATIVEPOLAR, L"Iterative Polar");
+    AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MIDPOINT, L"Midpoint");
+    AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MODIFIEDMIDPOINT, L"Modified Midpoint");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)circleMenu, L"&Circle");
+>>>>>>> Stashed changes
     return hMenubar;
 }
