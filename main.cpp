@@ -5,9 +5,8 @@
 #define UNICODE
 #endif
 
-#define IDM_FILE_NEW 1
+#define IDM_FILE_SAVE 1
 #define IDM_FILE_OPEN 2
-#define IDM_FILE_QUIT 3
 
 #define IDM_EDIT_CHOOSECOLOR 4
 #define IDM_EDIT_CLEAR 5
@@ -35,6 +34,7 @@
 #include <windows.h>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <stack>
 using namespace std;
 /*  Declare Windows procedure  */
@@ -42,6 +42,8 @@ LRESULT CALLBACK WindowProcedure(HWND, UINT, WPARAM, LPARAM);
 
 /*  Declare procedure to add menus  */
 HMENU CreateMenus();
+
+bool HDCToFile(const wchar_t* FilePath, HDC Context, RECT Area, uint16_t BitsPerPixel);
 
 /*  Make the class name into a global variable  */
 TCHAR szClassName[] = _T("CodeBlocksWindowsApp");
@@ -56,6 +58,10 @@ HCURSOR* currentCursor = NULL;
 CHOOSECOLOR colorChosen;
 COLORREF acrCustClr[16];
 COLORREF rgbCurrent;
+
+OPENFILENAMEW ofn;
+wchar_t szFileName[MAX_PATH] = L"";
+
 
 int WINAPI WinMain(HINSTANCE hThisInstance,
                    HINSTANCE hPrevInstance,
@@ -109,6 +115,16 @@ int WINAPI WinMain(HINSTANCE hThisInstance,
     colorChosen.lpCustColors = (LPDWORD)acrCustClr;
     colorChosen.rgbResult = rgbCurrent;
     colorChosen.Flags = CC_FULLOPEN | CC_RGBINIT;
+
+    ZeroMemory(&ofn, sizeof(ofn));
+
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = hwnd;
+    ofn.lpstrFilter = L"BMP files (*.bmp)\0*.bmp\0";
+    ofn.lpstrFile = szFileName;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+    ofn.lpstrDefExt = L"bmp";
 
     /* Make the window visible on the screen */
     ShowWindow(hwnd, nCmdShow);
@@ -551,6 +567,26 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
+        case IDM_FILE_SAVE:
+            if(GetSaveFileNameW(&ofn))
+            {
+                RECT rect;
+                GetClientRect(hwnd, &rect);
+
+                HDCToFile(szFileName, hdc, {0, 0, rect.right - rect.left, rect.bottom - rect.top}, 24);
+            }
+            break;
+        case IDM_FILE_OPEN:
+            if(GetOpenFileNameW(&ofn))
+            {
+                RECT rect;
+                GetClientRect(hwnd, &rect);
+
+                HBRUSH brush = CreatePatternBrush((HBITMAP) LoadImageW(NULL, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE));
+                FillRect(hdc, &rect, brush);
+                DeleteObject(brush);
+            }
+            break;
         case IDM_EDIT_CHOOSECOLOR:
             if (ChooseColor(&colorChosen) == TRUE)
             {
@@ -560,11 +596,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             break;
         case IDM_EDIT_CLEAR:
             {
-                int h = GetDeviceCaps(hdc, VERTRES);
-                int w = GetDeviceCaps(hdc, HORZRES);
+                RECT rect;
+                GetClientRect(hwnd, &rect);
 
-                Rectangle(hdc,-1,-1,w,h);
-
+                Rectangle(hdc, -1, -1,rect.right - rect.left + 1, rect.bottom - rect.top + 1);
             }
             break;
             
@@ -832,10 +867,8 @@ HMENU CreateMenus()
     HMENU clippingMenu = CreateMenu();
     HMENU circleMenu = CreateMenu();
 
-    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_NEW, L"New");
+    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_SAVE, L"Save");
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"Open");
-    AppendMenuW(fileMenu, MF_SEPARATOR, 0, NULL);
-    AppendMenuW(fileMenu, MF_STRING, IDM_FILE_QUIT, L"Quit");
 
     AppendMenuW(editMenu, MF_STRING, IDM_EDIT_CHOOSECOLOR, L"Choose color");
     AppendMenuW(editMenu, MF_STRING, IDM_EDIT_CLEAR, L"Clear");
@@ -868,4 +901,46 @@ HMENU CreateMenus()
 
 
     return hMenubar;
+}
+
+bool HDCToFile(const wchar_t* FilePath, HDC Context, RECT Area, uint16_t BitsPerPixel = 24)
+{
+    uint32_t Width = Area.right - Area.left;
+    uint32_t Height = Area.bottom - Area.top;
+
+    BITMAPINFO Info;
+    BITMAPFILEHEADER Header;
+    memset(&Info, 0, sizeof(Info));
+    memset(&Header, 0, sizeof(Header));
+    Info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    Info.bmiHeader.biWidth = Width;
+    Info.bmiHeader.biHeight = Height;
+    Info.bmiHeader.biPlanes = 1;
+    Info.bmiHeader.biBitCount = BitsPerPixel;
+    Info.bmiHeader.biCompression = BI_RGB;
+    Info.bmiHeader.biSizeImage = Width * Height * (BitsPerPixel > 24 ? 4 : 3);
+    Header.bfType = 0x4D42;
+    Header.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+
+    char* Pixels = NULL;
+    HDC MemDC = CreateCompatibleDC(Context);
+    HBITMAP Section = CreateDIBSection(Context, &Info, DIB_RGB_COLORS, (void**)&Pixels, 0, 0);
+    DeleteObject(SelectObject(MemDC, Section));
+    BitBlt(MemDC, 0, 0, Width, Height, Context, Area.left, Area.top, SRCCOPY);
+    DeleteDC(MemDC);
+
+    std::fstream hFile(FilePath, std::ios::out | std::ios::binary);
+    if (hFile.is_open())
+    {
+        hFile.write((char*)&Header, sizeof(Header));
+        hFile.write((char*)&Info.bmiHeader, sizeof(Info.bmiHeader));
+        hFile.write(Pixels, (((BitsPerPixel * Width + 31) & ~31) / 8) * Height);
+        hFile.close();
+        DeleteObject(Section);
+        return true;
+    }
+
+    DeleteObject(Section);
+    return false;
 }
