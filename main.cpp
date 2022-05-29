@@ -46,6 +46,8 @@ HMENU CreateMenus();
 /*  Make the class name into a global variable  */
 TCHAR szClassName[] = _T("CodeBlocksWindowsApp");
 
+HMENU hMenubar = CreateMenu();
+
 HCURSOR cNormal = LoadCursor(NULL, IDC_ARROW);
 HCURSOR cPlus = LoadCursor(NULL, IDC_CROSS);
 
@@ -565,25 +567,58 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
             }
             break;
+            
+        case IDM_rectangleClipping:
+            if (rectangleWindow) {
+                rectangleWindow=false;
+                CheckMenuItem(hMenubar, IDM_rectangleClipping, MF_UNCHECKED);
+            }
+            else {
+                currentFunction = LOWORD(wParam);
+                points.clear();
+                currentCursor = &cPlus;
+                break;
+            }
+            break;
+        case IDM_squareClipping:
+            if (rectangleWindow) {
+                rectangleWindow=false;
+                CheckMenuItem(hMenubar, IDM_squareClipping, MF_UNCHECKED);
+            }
+            else {
+                currentFunction = LOWORD(wParam);
+                points.clear();
+                currentCursor = &cPlus;
+                break;
+            }
+            break;
+        case CircleWindow:
+            if (circleWindow) {
+                circleWindow=false;
+                CheckMenuItem(hMenubar, CircleWindow, MF_UNCHECKED);
+            }
+            else {
+                currentFunction = LOWORD(wParam);
+                points.clear();
+                currentCursor = &cPlus;
+                break;
+            }
+            break;
         case IDM_LINE_DDA:
         case IDM_LINE_MIDPOINT:
         case IDM_LINE_PARAMETRIC:
         case IDM_Recursive_Fill:
         case IDM_Non_Recursive_Fill:
-        case IDM_rectangleClipping:
-        case IDM_squareClipping:
         case IDM_CIRCLE_DIRECT:
         case IDM_CIRCLE_POLAR :
         case IDM_CIRCLE_ITERATIVEPOLAR :
         case IDM_CIRCLE_MIDPOINT :
         case IDM_CIRCLE_MODIFIEDMIDPOINT:
         case IDM_GENERATE_POLYGON:
-        case CircleWindow:
             currentFunction = LOWORD(wParam);
             points.clear();
             currentCursor = &cPlus;
             break;
-
         }
 
         break;
@@ -756,6 +791,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             {
                 generateRectangle(hdc,points[0],points[1], rgbCurrent);
                 rectangleWindow=true;
+                CheckMenuItem(hMenubar, IDM_rectangleClipping, MF_CHECKED);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
@@ -789,7 +825,6 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
 HMENU CreateMenus()
 {
-    HMENU hMenubar = CreateMenu();
     HMENU fileMenu = CreateMenu();
     HMENU editMenu = CreateMenu();
     HMENU lineMenu = CreateMenu();
