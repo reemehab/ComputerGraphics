@@ -150,7 +150,7 @@ struct point
 {
     int x, y;
 };
-void swap(point p1,point p2)
+void swap(point &p1,point &p2)
 {
     point temp=p1;
     p1=p2;
@@ -171,7 +171,7 @@ void lineDDA(HDC hdc, point p1, point p2, COLORREF c)
         }
         int x = p1.x;
         double y = p1.y;
-        double m = (double)dy / dx;
+        double m = (double)dy / (double)dx;
         SetPixel(hdc, x, Round(y), c);
         while (x < p2.x)
         {
@@ -188,7 +188,7 @@ void lineDDA(HDC hdc, point p1, point p2, COLORREF c)
         }
         double x = p1.x;
         int y = p1.y;
-        double minV = dx / dy;
+        double minV = (double) dx / (double) dy;
         SetPixel(hdc, Round(x), y, c);
         while (y < p2.y)
         {
@@ -210,6 +210,8 @@ void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
         if (p1.x > p2.x)
         {
             swap(p1,p2);
+            dx = p2.x - p1.x;
+            dy = p2.y - p1.y;
         }
         int x = p1.x, y = p1.y;
         int d = dx - 2 * dy;
@@ -241,6 +243,8 @@ void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
         if (p1.y > p2.y)
         {
             swap(p1,p2);
+            dx = p2.x - p1.x;
+            dy = p2.y - p1.y;
         }
         int x = p1.x, y = p1.y;
         SetPixel(hdc, x, y, c);
