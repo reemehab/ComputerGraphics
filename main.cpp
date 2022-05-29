@@ -30,7 +30,7 @@
 #define IDM_CIRCLE_MODIFIEDMIDPOINT 18
 
 #define IDM_GENERATE_POLYGON 19
-
+#define IDM_Cardinal_Spline   20
 #include <tchar.h>
 #include <windows.h>
 #include <vector>
@@ -536,6 +536,50 @@ void generateRectangle(HDC hdc, point p0, point p1, COLORREF color) {
     generatePolygon(hdc, points, color);
 }
 
+
+void DrawHermiteCurve(HDC hdc,point& p1, point& T1, point& p2, point& T2,COLORREF color)
+{
+
+    double alpha0 = p1.x,
+           alpha1 = T1.x,
+           alpha2 = -3 * p1.x - 2 * T1.x + 3 * p2.x - T2.x,
+           alpha3 = 2 * p1.x + T1.x - 2 * p2.x + T2.x;
+    double beta0 = p1.y,
+           beta1 = T1.y,
+           beta2 = -3 * p1.y - 2 * T1.y + 3 * p2.y - T2.y,
+           beta3 = 2 * p1.y + T1.y - 2 * p2.y + T2.y;
+    for (double t = 0; t <= 1; t += 0.001)
+    {
+        double t2 = t*t,
+               t3 = t2*t;
+        double x = alpha0 + alpha1*t + alpha2*t2 + alpha3*t3;
+        double y = beta0 + beta1*t + beta2*t2 + beta3*t3;
+
+ 
+        SetPixel(hdc, Round(x), Round(y), color);
+    }
+}
+
+void DrawCardinalSpline(HDC hdc,vector<point> p,int n,double c,COLORREF color)
+{
+    vector<point>t(n);
+    for(int i=1;i<n-1;i++)
+    {
+        t[i].x=(c/2)*(p[i+1].x-p[i-1].x);
+        t[i].y=(c/2)*(p[i+1].y-p[i-1].y);
+
+    }
+    t[0].x=(c/2)*(p[1].x-p[0].x);
+    t[0].y= (c/2)*(p[1].y-p[0].y);
+
+    t[n-1].x=(c/2)*(p[n-1].x-p[n-2].x);
+    t[n-1].y= (c/2)*(p[n-1].y-p[n-2].y);
+    for(int i=0;i<n-1;i++)
+    {
+        DrawHermiteCurve(hdc,p[i],t[i],p[i+1],t[i+1],color);
+    }
+}
+
 int currentFunction = -1;
 vector<point> points;
 vector<point>window;
@@ -615,6 +659,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_CIRCLE_MIDPOINT :
         case IDM_CIRCLE_MODIFIEDMIDPOINT:
         case IDM_GENERATE_POLYGON:
+        case IDM_Cardinal_Spline:
             currentFunction = LOWORD(wParam);
             points.clear();
             currentCursor = &cPlus;
@@ -627,6 +672,21 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             SetCursor(*currentCursor);
         else
             return DefWindowProc(hwnd, message, wParam, lParam);
+        break;
+        case WM_RBUTTONUP:
+        switch (currentFunction)
+        {
+        case IDM_Cardinal_Spline:
+        for(int i=0;i<points.size();i++)
+        {
+            cout<<points[i].x<<" "<<points[i].y<<endl;
+        }
+            DrawCardinalSpline(hdc,points,points.size(),1,rgbCurrent);
+            break;
+        
+        default:
+            break;
+        }
         break;
     case WM_LBUTTONUP:
     {
@@ -809,8 +869,17 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 points.clear();
             }
             break;
+       case IDM_Cardinal_Spline:
+       points.push_back(p);
+
+
+
+           break;
+       
 
         }
+        
+
     }
     break;
     case WM_DESTROY:
@@ -831,6 +900,7 @@ HMENU CreateMenus()
     HMENU fillingMenu = CreateMenu();
     HMENU clippingMenu = CreateMenu();
     HMENU circleMenu = CreateMenu();
+    HMENU curvesMenu = CreateMenu(); 
 
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_NEW, L"New");
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"Open");
@@ -864,6 +934,10 @@ HMENU CreateMenus()
     AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MIDPOINT, L"Midpoint");
     AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MODIFIEDMIDPOINT, L"Modified Midpoint");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)circleMenu, L"&Circle");
+
+      AppendMenuW(curvesMenu, MF_STRING, IDM_Cardinal_Spline, L"Cardinal Spline");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)curvesMenu, L"&Curve");
+
 
 
 
