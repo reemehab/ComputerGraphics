@@ -32,21 +32,22 @@
 
 #define IDM_GENERATE_POLYGON 20
 #define IDM_CARDINAL_SPLINE 21
-#define IDM_GENERATE_POINT 22
+#define IDM_Bezier_Curve 22
+#define IDM_GENERATE_POINT 23
 
-#define IDM_ELLIPSE_DIRECT 23
-#define IDM_ELLIPSE_POLAR 24
-#define IDM_ELLIPSE_MIDPOINT 25
+#define IDM_ELLIPSE_DIRECT 24
+#define IDM_ELLIPSE_POLAR 25
+#define IDM_ELLIPSE_MIDPOINT 26
 
-#define IDM_FILLQUARTERLINE_FIRST 26
-#define IDM_FILLQUARTERLINE_SECOND 27
-#define IDM_FILLQUARTERLINE_THIRD 28
-#define IDM_FILLQUARTERLINE_FOURTH 29
+#define IDM_FILLQUARTERLINE_FIRST 27
+#define IDM_FILLQUARTERLINE_SECOND 28
+#define IDM_FILLQUARTERLINE_THIRD 29
+#define IDM_FILLQUARTERLINE_FOURTH 30
 
-#define IDM_FILLQUARTERCIRCLE_FIRST 30
-#define IDM_FILLQUARTERCIRCLE_SECOND 31
-#define IDM_FILLQUARTERCIRCLE_THIRD 32
-#define IDM_FILLQUARTERCIRCLE_FOURTH 33
+#define IDM_FILLQUARTERCIRCLE_FIRST 31
+#define IDM_FILLQUARTERCIRCLE_SECOND 32
+#define IDM_FILLQUARTERCIRCLE_THIRD 33
+#define IDM_FILLQUARTERCIRCLE_FOURTH 34
 
 #include <cmath>
 #include <list>
@@ -1003,7 +1004,7 @@ void generateRectangle(HDC hdc, point p0, point p1, COLORREF color)
 
     generatePolygon(hdc, points, color);
 }
-
+///-----------------curves
 void DrawHermiteCurve(HDC hdc, point &p1, point &T1, point &p2, point &T2, COLORREF color)
 {
 
@@ -1044,7 +1045,19 @@ void DrawCardinalSpline(HDC hdc, vector<point> p, int n, double c, COLORREF colo
         DrawHermiteCurve(hdc, p[i], t[i], p[i + 1], t[i + 1], color);
     }
 }
-//-----convef fily-----
+
+void DrawBezierCurve(HDC hdc, point P0, point P1, point P2, point P3, COLORREF color)
+{
+    point T0;
+    T0.x = (3 * (P1.x - P0.x));
+    T0.y = 3 * (P1.y - P0.y);
+    point T1;
+    T1.x = (3 * (P3.x - P2.x));
+    T1.y = 3 * (P3.y - P2.y);
+    DrawHermiteCurve(hdc, P0, T0, P3, T1, color);
+}
+
+///-----convex filing-----
 struct Entry
 {
     int xmin, xmax;
@@ -1100,7 +1113,7 @@ void ConvexFill(HDC hdc, vector<point> p, COLORREF color)
     delete table;
 }
 
-// general
+///--general-Polygon-Filling
 struct EdgeRec
 {
     double x;
@@ -1172,6 +1185,94 @@ void GeneralPolygonFill(HDC hdc, vector<point> polygon, COLORREF c)
         ActiveList.insert(ActiveList.end(), table[y].begin(), table[y].end());
     }
     delete[] table;
+}
+
+///------------polygon clipping
+struct Vertex
+{
+    double x, y;
+    Vertex(int x1 = 0, int y1 = 0)
+    {
+        x = x1;
+        y = y1;
+    }
+};
+typedef vector<Vertex> VertexList;
+typedef bool (*IsInFunc)(Vertex &v, int edge);
+typedef Vertex (*IntersectFunc)(Vertex &v1, Vertex &v2, int edge);
+
+VertexList ClipWithEdge(VertexList p, int edge, IsInFunc In, IntersectFunc Intersect)
+{
+    VertexList OutList;
+    Vertex v1 = p[p.size() - 1];
+    bool v1_in = In(v1, edge);
+    for (int i = 0; i < (int)p.size(); i++)
+    {
+        Vertex v2 = p[i];
+        bool v2_in = In(v2, edge);
+        if (!v1_in && v2_in)
+        {
+            OutList.push_back(Intersect(v1, v2, edge));
+            OutList.push_back(v2);
+        }
+        else if (v1_in && v2_in)
+            OutList.push_back(v2);
+        else if (v1_in)
+            OutList.push_back(Intersect(v1, v2, edge));
+        v1 = v2;
+        v1_in = v2_in;
+    }
+    return OutList;
+}
+
+bool InLeft(Vertex &v, int edge)
+{
+    return v.x >= edge;
+}
+bool InRight(Vertex &v, int edge)
+{
+    return v.x <= edge;
+}
+bool InTop(Vertex &v, int edge)
+{
+    return v.y >= edge;
+}
+bool InBottom(Vertex &v, int edge)
+{
+    return v.y <= edge;
+}
+Vertex VIntersect(Vertex &v1, Vertex &v2, int xedge)
+{
+    Vertex res;
+    res.x = xedge;
+    res.y = v1.y + (xedge - v1.x) * (v2.y - v1.y) / (v2.x - v1.x);
+    return res;
+}
+
+Vertex HIntersect(Vertex &v1, Vertex &v2, int yedge)
+{
+    Vertex res;
+    res.y = yedge;
+    res.x = v1.x + (yedge - v1.y) * (v2.x - v1.x) / (v2.y - v1.y);
+    return res;
+}
+void PolygonClip(HDC hdc, POINT *p, int n, int xleft, int ytop, int xright, int ybottom)
+{
+    VertexList vlist;
+    for (int i = 0; i < n; i++)
+        vlist.push_back(Vertex(p[i].x, p[i].y));
+    vlist = ClipWithEdge(vlist, xleft, InLeft, VIntersect);
+    vlist = ClipWithEdge(vlist, ytop, InTop, HIntersect);
+    vlist = ClipWithEdge(vlist, xright, InRight, VIntersect);
+    vlist = ClipWithEdge(vlist, ybottom, InBottom, HIntersect);
+    Vertex v1 = vlist[vlist.size() - 1];
+    for (int i = 0; i < (int)vlist.size(); i++)
+    {
+        Vertex v2 = vlist[i];
+        MoveToEx(hdc, Round(v1.x), Round(v1.y), NULL);
+        LineTo(hdc, Round(v2.x), Round(v2.y));
+        v1 = v2;
+    }
 }
 
 int currentFunction = -1;
@@ -1312,6 +1413,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_FILLQUARTERCIRCLE_THIRD:
         case IDM_FILLQUARTERCIRCLE_FOURTH:
         case IDM_NON_CONVEX_FILLING:
+        case IDM_Bezier_Curve:
             currentFunction = LOWORD(wParam);
             points.clear();
             currentCursor = &cPlus;
@@ -1473,7 +1575,6 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             currentFunction = -1;
             points.clear();
             break;
-
         case IDM_CIRCLE_DIRECT:
             points.push_back(p);
             if (points.size() == 2)
@@ -1714,8 +1815,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 CheckMenuItem(hMenubar, IDM_CIRCLE_CLIPPING, MF_UNCHECKED);
                 currentCursor = NULL;
                 currentFunction = -1;
+
                 points.clear();
             }
+
             break;
         case IDM_RECTANGLE_CLIPPING:
             window.push_back(p);
@@ -1750,6 +1853,62 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             break;
         case IDM_CARDINAL_SPLINE:
             points.push_back(p);
+            break;
+        case IDM_Bezier_Curve:
+
+            points.push_back(p);
+
+            if (points.size() == 2)
+            {
+                generateRectangle(hdc, points[0], points[1], rgbCurrent);
+                point p1;
+                p1.x = points[0].x;
+                p1.y = points[0].y;
+                point p2;
+                p2.x = points[1].x;
+                p2.y = points[0].y;
+                point p3;
+                p3.x = points[1].x;
+                p3.y = points[1].y;
+                point p4;
+                p4.y = points[1].y;
+                p4.x = points[0].x;
+                point tmp1;
+                point tmp2;
+                tmp1.x = p1.x + 10;
+                tmp1.y = p1.y - 10;
+                tmp2.x = p2.x - 10;
+                tmp2.y = p2.y - 10;
+
+                point tmp3;
+                point tmp4;
+                tmp3.x = p4.x + 10;
+                tmp3.y = p4.y + 10;
+                tmp4.x = p3.x - 10;
+                tmp4.y = p3.y + 10;
+
+                cout << p1.x << "     " << p1.y << endl;
+                cout << p2.x << "     " << p2.y << endl;
+                cout << p3.x << "     " << p3.y << endl;
+                cout << p4.x << "     " << p4.y << endl;
+                cout << tmp1.x << "     " << tmp1.y << endl;
+                cout << tmp2.x << "     " << tmp2.y << endl;
+
+                for (; tmp3.y < tmp2.y;)
+                {
+                    cout << "hi";
+                    DrawBezierCurve(hdc, p4, tmp3, tmp4, p3, rgbCurrent);
+                    DrawBezierCurve(hdc, p1, tmp1, tmp2, p2, rgbCurrent);
+                    tmp1.y -= 0.1;
+                    tmp2.y -= 0.1;
+                    tmp3.y += 0.1;
+                    tmp4.y += 0.1;
+                    p1.y -= 0.1;
+                    p2.y -= 0.1;
+                    p3.y += 0.1;
+                    p4.y += 0.01;
+                }
+            }
             break;
         }
     }
@@ -1801,6 +1960,7 @@ HMENU CreateMenus()
 
     AppendMenuW(filledPolygonMenu, MF_STRING, IDM_NON_CONVEX_FILLING, L"Non-convex Filling");
     AppendMenuW(filledPolygonMenu, MF_STRING, IDM_CONVEX_FILLING, L"Convex Filling");
+    AppendMenuW(filledPolygonMenu, MF_STRING, IDM_Bezier_Curve, L"Bezier Curve");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)filledPolygonMenu, L"Filling");
 
     AppendMenuW(clippingMenu, MF_STRING, IDM_CIRCLE_CLIPPING, L"Circle clipping");
@@ -1827,17 +1987,17 @@ HMENU CreateMenus()
     AppendMenuW(shapesMenu, MF_STRING, IDM_GENERATE_POLYGON, L"Polygon");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)shapesMenu, L"Shapes");
 
-    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_FIRST, L"First");
-    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_SECOND, L"Second");
-    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_THIRD, L"Third");
-    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_FOURTH, L"Fourth");
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillQuarterLine, L"FillQuarterLines");
+    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_FIRST, L"First Quarter");
+    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_SECOND, L"Second Quarter");
+    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_THIRD, L"Third Quarter");
+    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_FOURTH, L"Fourth Quarter");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillQuarterLine, L"Fill circle with lines");
 
-    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_FIRST, L"First");
-    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_SECOND, L"Second");
-    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_THIRD, L"Third");
-    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_FOURTH, L"Fourth");
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillQuarterCircle, L"FillQuarterCircles");
+    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_FIRST, L"First Quarter");
+    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_SECOND, L"Second Quarter");
+    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_THIRD, L"Third Quarter");
+    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_FOURTH, L"Fourth Quarter");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillQuarterCircle, L"Fill circle with circles");
     return hMenubar;
 }
 
