@@ -33,21 +33,22 @@
 #define IDM_GENERATE_POLYGON 20
 #define IDM_CARDINAL_SPLINE 21
 #define IDM_Bezier_Curve 22
-#define IDM_GENERATE_POINT 23
+#define IDM_Hermite_Curve 23
+#define IDM_GENERATE_POINT 24
 
-#define IDM_ELLIPSE_DIRECT 24
-#define IDM_ELLIPSE_POLAR 25
-#define IDM_ELLIPSE_MIDPOINT 26
+#define IDM_ELLIPSE_DIRECT 25
+#define IDM_ELLIPSE_POLAR 26
+#define IDM_ELLIPSE_MIDPOINT 27
 
-#define IDM_FILLQUARTERLINE_FIRST 27
-#define IDM_FILLQUARTERLINE_SECOND 28
-#define IDM_FILLQUARTERLINE_THIRD 29
-#define IDM_FILLQUARTERLINE_FOURTH 30
+#define IDM_FILLQUARTERLINE_FIRST 28
+#define IDM_FILLQUARTERLINE_SECOND 29
+#define IDM_FILLQUARTERLINE_THIRD 30
+#define IDM_FILLQUARTERLINE_FOURTH 31
 
-#define IDM_FILLQUARTERCIRCLE_FIRST 31
-#define IDM_FILLQUARTERCIRCLE_SECOND 32
-#define IDM_FILLQUARTERCIRCLE_THIRD 33
-#define IDM_FILLQUARTERCIRCLE_FOURTH 34
+#define IDM_FILLQUARTERCIRCLE_FIRST 32
+#define IDM_FILLQUARTERCIRCLE_SECOND 33
+#define IDM_FILLQUARTERCIRCLE_THIRD 34
+#define IDM_FILLQUARTERCIRCLE_FOURTH 35
 
 #include <cmath>
 #include <list>
@@ -983,15 +984,6 @@ void generatePolygon(HDC hdc, vector<point> p, COLORREF color)
     MidPointLine(hdc, p[0], p[p.size() - 1], color);
 }
 
-void generatePolygon(HDC hdc, vector<point> p, vector<point> window, COLORREF color)
-{
-    for (int i = 0; i < p.size() - 1; i++)
-    {
-        CohenSuth(hdc, p[i], p[i + 1], window[0].x, window[0].y, window[1].x, window[1].y, 3, rgbCurrent);
-    }
-    CohenSuth(hdc, p[0], p[p.size() - 1], window[0].x, window[0].y, window[1].x, window[1].y, 3, rgbCurrent);
-}
-
 void generateRectangle(HDC hdc, point p0, point p1, COLORREF color)
 {
     vector<point> points;
@@ -1005,7 +997,7 @@ void generateRectangle(HDC hdc, point p0, point p1, COLORREF color)
     generatePolygon(hdc, points, color);
 }
 ///-----------------curves
-void DrawHermiteCurve(HDC hdc, point &p1, point &T1, point &p2, point &T2, COLORREF color)
+void DrawHermiteCurve(HDC hdc, point p1, point T1, point p2, point T2, COLORREF color)
 {
 
     double alpha0 = p1.x,
@@ -1188,27 +1180,18 @@ void GeneralPolygonFill(HDC hdc, vector<point> polygon, COLORREF c)
 }
 
 ///------------polygon clipping
-struct Vertex
-{
-    double x, y;
-    Vertex(int x1 = 0, int y1 = 0)
-    {
-        x = x1;
-        y = y1;
-    }
-};
-typedef vector<Vertex> VertexList;
-typedef bool (*IsInFunc)(Vertex &v, int edge);
-typedef Vertex (*IntersectFunc)(Vertex &v1, Vertex &v2, int edge);
+typedef vector<point> VertexList;
+typedef bool (*IsInFunc)(point &v, int edge);
+typedef point (*IntersectFunc)(point &v1, point &v2, int edge);
 
 VertexList ClipWithEdge(VertexList p, int edge, IsInFunc In, IntersectFunc Intersect)
 {
     VertexList OutList;
-    Vertex v1 = p[p.size() - 1];
+    point v1 = p[p.size() - 1];
     bool v1_in = In(v1, edge);
     for (int i = 0; i < (int)p.size(); i++)
     {
-        Vertex v2 = p[i];
+        point v2 = p[i];
         bool v2_in = In(v2, edge);
         if (!v1_in && v2_in)
         {
@@ -1225,52 +1208,59 @@ VertexList ClipWithEdge(VertexList p, int edge, IsInFunc In, IntersectFunc Inter
     return OutList;
 }
 
-bool InLeft(Vertex &v, int edge)
+bool InLeft(point &v, int edge)
 {
     return v.x >= edge;
 }
-bool InRight(Vertex &v, int edge)
+bool InRight(point &v, int edge)
 {
     return v.x <= edge;
 }
-bool InTop(Vertex &v, int edge)
+bool InTop(point &v, int edge)
 {
     return v.y >= edge;
 }
-bool InBottom(Vertex &v, int edge)
+bool InBottom(point &v, int edge)
 {
     return v.y <= edge;
 }
-Vertex VIntersect(Vertex &v1, Vertex &v2, int xedge)
+point VIntersect(point &v1, point &v2, int xedge)
 {
-    Vertex res;
+    point res;
     res.x = xedge;
     res.y = v1.y + (xedge - v1.x) * (v2.y - v1.y) / (v2.x - v1.x);
     return res;
 }
 
-Vertex HIntersect(Vertex &v1, Vertex &v2, int yedge)
+point HIntersect(point &v1, point &v2, int yedge)
 {
-    Vertex res;
+    point res;
     res.y = yedge;
     res.x = v1.x + (yedge - v1.y) * (v2.x - v1.x) / (v2.y - v1.y);
     return res;
 }
-void PolygonClip(HDC hdc, POINT *p, int n, int xleft, int ytop, int xright, int ybottom)
+void PolygonClip(HDC hdc, vector<point> p, int xleft, int ytop, int xright, int ybottom, COLORREF color)
 {
+    if (xleft > xright)
+    {
+        swap(xleft, xright);
+    }
+    if (ytop > ybottom)
+    {
+        swap(ytop, ybottom);
+    }
     VertexList vlist;
-    for (int i = 0; i < n; i++)
-        vlist.push_back(Vertex(p[i].x, p[i].y));
+    for (int i = 0; i < p.size(); i++)
+        vlist.push_back({p[i].x, p[i].y});
     vlist = ClipWithEdge(vlist, xleft, InLeft, VIntersect);
     vlist = ClipWithEdge(vlist, ytop, InTop, HIntersect);
     vlist = ClipWithEdge(vlist, xright, InRight, VIntersect);
     vlist = ClipWithEdge(vlist, ybottom, InBottom, HIntersect);
-    Vertex v1 = vlist[vlist.size() - 1];
+    point v1 = vlist[vlist.size() - 1];
     for (int i = 0; i < (int)vlist.size(); i++)
     {
-        Vertex v2 = vlist[i];
-        MoveToEx(hdc, Round(v1.x), Round(v1.y), NULL);
-        LineTo(hdc, Round(v2.x), Round(v2.y));
+        point v2 = vlist[i];
+        lineDDA(hdc, v1, v2, color);
         v1 = v2;
     }
 }
@@ -1414,6 +1404,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_FILLQUARTERCIRCLE_FOURTH:
         case IDM_NON_CONVEX_FILLING:
         case IDM_Bezier_Curve:
+        case IDM_Hermite_Curve:
             currentFunction = LOWORD(wParam);
             points.clear();
             currentCursor = &cPlus;
@@ -1440,7 +1431,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             }
             else
             {
-                generatePolygon(hdc, points, window, rgbCurrent);
+                PolygonClip(hdc, points, window[0].x, window[0].y, window[1].x, window[1].y, rgbCurrent);
             }
             currentCursor = NULL;
             currentFunction = -1;
@@ -1862,52 +1853,72 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             {
                 generateRectangle(hdc, points[0], points[1], rgbCurrent);
                 point p1;
-                p1.x = points[0].x;
-                p1.y = points[0].y;
+                p1.x = min(points[0].x, points[1].x);
+                p1.y = min(points[0].y, points[1].y);
                 point p2;
-                p2.x = points[1].x;
-                p2.y = points[0].y;
+                p2.x = max(points[0].x, points[1].x);
+                p2.y = min(points[0].y, points[1].y);
                 point p3;
-                p3.x = points[1].x;
-                p3.y = points[1].y;
+                p3.x = max(points[0].x, points[1].x);
+                p3.y = max(points[0].y, points[1].y);
                 point p4;
-                p4.y = points[1].y;
-                p4.x = points[0].x;
-                point tmp1;
-                point tmp2;
-                tmp1.x = p1.x + 10;
-                tmp1.y = p1.y - 10;
-                tmp2.x = p2.x - 10;
-                tmp2.y = p2.y - 10;
+                p4.x = min(points[0].x, points[1].x);
+                p4.y = max(points[0].y, points[1].y);
 
-                point tmp3;
-                point tmp4;
-                tmp3.x = p4.x + 10;
-                tmp3.y = p4.y + 10;
-                tmp4.x = p3.x - 10;
-                tmp4.y = p3.y + 10;
-
-                cout << p1.x << "     " << p1.y << endl;
-                cout << p2.x << "     " << p2.y << endl;
-                cout << p3.x << "     " << p3.y << endl;
-                cout << p4.x << "     " << p4.y << endl;
-                cout << tmp1.x << "     " << tmp1.y << endl;
-                cout << tmp2.x << "     " << tmp2.y << endl;
-
-                for (; tmp3.y < tmp2.y;)
+                for (int i = p1.y; i <= p4.y; i++)
                 {
-                    cout << "hi";
-                    DrawBezierCurve(hdc, p4, tmp3, tmp4, p3, rgbCurrent);
-                    DrawBezierCurve(hdc, p1, tmp1, tmp2, p2, rgbCurrent);
-                    tmp1.y -= 0.1;
-                    tmp2.y -= 0.1;
-                    tmp3.y += 0.1;
-                    tmp4.y += 0.1;
-                    p1.y -= 0.1;
-                    p2.y -= 0.1;
-                    p3.y += 0.1;
-                    p4.y += 0.01;
+                    DrawBezierCurve(hdc, p4, {p4.x + 10, p4.y - 10}, {p3.x - 10, p3.y - 10}, p3, rgbCurrent);
+                    DrawBezierCurve(hdc, p1, {p1.x + 10, p1.y + 10}, {p2.x - 10, p2.y + 10}, p2, rgbCurrent);
+                    p1.y += 1;
+                    p2.y += 1;
+                    p3.y -= 1;
+                    p4.y -= 1;
                 }
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_Hermite_Curve:
+            points.push_back(p);
+
+            if (points.size() == 2)
+            {
+                int edge;
+                if (abs(points[0].x - points[1].x) > abs(points[0].y - points[1].y))
+                {
+                    edge = points[1].y - points[0].y;
+                }
+                else
+                {
+                    edge = points[1].x - points[0].x;
+                }
+                points[1] = {points[0].x + edge, points[0].y + edge};
+                generateRectangle(hdc, points[0], points[1], rgbCurrent);
+                point p1;
+                p1.x = min(points[0].x, points[1].x);
+                p1.y = min(points[0].y, points[1].y);
+                point p2;
+                p2.x = max(points[0].x, points[1].x);
+                p2.y = min(points[0].y, points[1].y);
+                point p3;
+                p3.x = max(points[0].x, points[1].x);
+                p3.y = max(points[0].y, points[1].y);
+                point p4;
+                p4.x = min(points[0].x, points[1].x);
+                p4.y = max(points[0].y, points[1].y);
+                for (int i = p1.x; i <= p2.x; i++)
+                {
+                    DrawHermiteCurve(hdc, p1, {50, 50}, p4, {-50, 50}, rgbCurrent);
+                    DrawHermiteCurve(hdc, p2, {-50, 50}, p3, {50, 50}, rgbCurrent);
+                    p1.x += 1;
+                    p2.x -= 1;
+                    p3.x -= 1;
+                    p4.x += 1;
+                }
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
             }
             break;
         }
@@ -1938,7 +1949,6 @@ HMENU CreateMenus()
     HMENU ellipseMenu = CreateMenu();
     HMENU curvesMenu = CreateMenu();
     HMENU shapesMenu = CreateMenu();
-    HMENU filledPolygonMenu = CreateMenu();
 
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_SAVE, L"Save");
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"Open");
@@ -1956,12 +1966,11 @@ HMENU CreateMenus()
 
     AppendMenuW(fillingMenu, MF_STRING, IDM_NON_RECURSIVE_FILL, L"Non-recursive flood fill");
     AppendMenuW(fillingMenu, MF_STRING, IDM_RECURSIVE_FILL, L"Recursive flood fill");
+    AppendMenuW(fillingMenu, MF_STRING, IDM_NON_CONVEX_FILLING, L"Non-convex Filling");
+    AppendMenuW(fillingMenu, MF_STRING, IDM_CONVEX_FILLING, L"Convex Filling");
+    AppendMenuW(fillingMenu, MF_STRING, IDM_Hermite_Curve, L"Hermite Filling");
+    AppendMenuW(fillingMenu, MF_STRING, IDM_Bezier_Curve, L"Bezier Curve");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillingMenu, L"Filling");
-
-    AppendMenuW(filledPolygonMenu, MF_STRING, IDM_NON_CONVEX_FILLING, L"Non-convex Filling");
-    AppendMenuW(filledPolygonMenu, MF_STRING, IDM_CONVEX_FILLING, L"Convex Filling");
-    AppendMenuW(filledPolygonMenu, MF_STRING, IDM_Bezier_Curve, L"Bezier Curve");
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)filledPolygonMenu, L"Filling");
 
     AppendMenuW(clippingMenu, MF_STRING, IDM_CIRCLE_CLIPPING, L"Circle clipping");
     AppendMenuW(clippingMenu, MF_STRING, IDM_RECTANGLE_CLIPPING, L"Rectangle clipping");
