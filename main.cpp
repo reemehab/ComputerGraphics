@@ -30,9 +30,15 @@
 #define IDM_CIRCLE_MIDPOINT 18
 #define IDM_CIRCLE_MODIFIEDMIDPOINT 19
 
+
+
 #define IDM_GENERATE_POLYGON 20
 #define IDM_CARDINAL_SPLINE 21
 #define IDM_GENERATE_POINT 22
+
+#define IDM_ELLIPSE_DIRECT 23
+#define IDM_ELLIPSE_POLAR 24
+#define IDM_ELLIPSE_MIDPOINT 25
 
 #include <cmath>
 #include <list>
@@ -370,6 +376,85 @@ void non_recursiveFloodFill(HDC hdc, point p, COLORREF filledColor)
         s.push({p.x - 1, p.y});
         s.push({p.x, p.y - 1});
     }
+}
+///--------------------------------------------ellipse----------------------------------------
+void Draw4points(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
+{
+    SetPixel(hdc,xc+x,yc+y,color);
+    SetPixel(hdc,xc+x,yc-y,color);
+    SetPixel(hdc,xc-x,yc+y,color);
+    SetPixel(hdc,xc-x,yc-y,color);
+}
+
+void ellipseDirect(HDC hdc, int xc, int yc, int a, int b, COLORREF c) {
+	int x = 0;
+	double y = b;
+	Draw4points(hdc, xc, yc, x, Round(y), c);
+	while (x * b * b < y * a * a) {
+		x++;
+		y = b * sqrt(1 - (x * x * 1.0) / (a * a));
+		Draw4points(hdc,xc, yc, x, Round(y), c);
+	}
+	int y1 = 0;
+	double x1 = a;
+	Draw4points(hdc,xc, yc, Round(x1), y1, c);
+	while (x1 * b * b > y1 * a * a) {
+		y1++;
+		x1 = a * sqrt(1 - (y1 * y1 * 1.0) / (b * b));
+		Draw4points(hdc,xc, yc, Round(x1), y1, c);
+	}
+}
+void ellipsePolar(HDC hdc, int xc, int yc, int a, int b, COLORREF c) {
+	double x = a;
+	double y = 0;
+	double theta = 0;
+	double dtheta = 1.0 / ((a+b));
+	double cd = cos(dtheta);
+	double sd = sin(dtheta);
+
+	Draw4points(hdc,xc, yc, Round(x), Round(y),  c);
+	while (x>0) {
+		x = a * cos(theta);
+		y = b * sin(theta);
+		theta += dtheta;
+		Draw4points(hdc,xc, yc, Round(x), Round(y),c);
+	}
+}
+
+void ellipseMidpoint(HDC hdc, int xc, int yc, int a, int b, COLORREF c) {
+	int x = 0, y = b;
+	int b2 = b * b;
+	int a2 = a * a;
+	double d = b2 + a2 * pow((b - 0.5), 2) - a2 * b2;
+	Draw4points(hdc,xc, yc, x, y, c);
+	while (x * b * b < y * a * a) {
+		if (d <= 0) {
+			d += b2 * (2 * x + 3);
+			x++;
+		}
+		else {
+			d += b2 * (2 * x + 3) + a2 * (-2 * y + 2);
+			x++;
+			y--;
+		}
+		Draw4points(hdc,xc, yc, x, y, c);
+	}
+	x = a;
+	y = 0;
+	d = b2 * pow((a - 0.5), 2) + a2 - a2 * b2;
+	Draw4points(hdc,xc, yc, x, y, c);
+	while (x * b * b > y * a * a) {
+		if (d <= 0) {
+			d += a2 * (2 * y + 3);
+			y++;
+		}
+		else {
+			d += a2 * (2 * y + 3) + b2 * (-2 * x + 2);
+			x--;
+			y++;
+		}
+		Draw4points(hdc,xc, yc, x, y, c);
+	}
 }
 ///--------------------------------------------circle----------------------------------------
 void Draw8points(HDC hdc, int xc, int yc, int a, int b, COLORREF color)
@@ -891,6 +976,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_CIRCLE_ITERATIVEPOLAR:
         case IDM_CIRCLE_MIDPOINT:
         case IDM_CIRCLE_MODIFIEDMIDPOINT:
+        case IDM_ELLIPSE_DIRECT:
+        case IDM_ELLIPSE_POLAR:
+        case IDM_ELLIPSE_MIDPOINT:
         case IDM_GENERATE_POLYGON:
         case IDM_CARDINAL_SPLINE:
         case IDM_GENERATE_POINT:
@@ -901,6 +989,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             currentCursor = &cPlus;
             break;
         }
+
 
         break;
     case WM_SETCURSOR:
@@ -1037,6 +1126,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             currentFunction = -1;
             points.clear();
             break;
+
         case IDM_CIRCLE_DIRECT:
             points.push_back(p);
             if (points.size() == 2)
@@ -1099,6 +1189,46 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 points.clear();
             }
             break;
+        case IDM_ELLIPSE_DIRECT:
+            points.push_back(p);
+            if (points.size() == 3)
+            {
+                int a=CalcRadius(points[0].x,points[0].y,points[1].x, points[1].y);
+                int b=CalcRadius(points[0].x,points[0].y,points[2].x, points[2].y);
+                ellipseDirect(hdc, points[0].x, points[0].y, a,b, rgbCurrent);
+                currentCursor = NULL;
+                currentFunction = -1;
+                cout << "Drawing direct ellipse" << endl;
+                points.clear();
+            }
+            break;
+        case IDM_ELLIPSE_MIDPOINT:
+            points.push_back(p);
+            if (points.size() == 3)
+            {
+                int a=CalcRadius(points[0].x,points[0].y,points[1].x, points[1].y);
+                int b=CalcRadius(points[0].x,points[0].y,points[2].x, points[2].y);
+                ellipseMidpoint(hdc, points[0].x, points[0].y, a,b, rgbCurrent);
+                currentCursor = NULL;
+                currentFunction = -1;
+                cout << "Drawing midpoint ellipse" << endl;
+                points.clear();
+            }
+            break;
+        case IDM_ELLIPSE_POLAR:
+            points.push_back(p);
+            if (points.size() == 3)
+            {
+                int a=CalcRadius(points[0].x,points[0].y,points[1].x, points[1].y);
+                int b=CalcRadius(points[0].x,points[0].y,points[2].x, points[2].y);
+                ellipsePolar(hdc, points[0].x, points[0].y, a,b, rgbCurrent);
+                currentCursor = NULL;
+                currentFunction = -1;
+                cout << "Drawing polar ellipse" << endl;
+                points.clear();
+            }
+            break;
+
         case IDM_RECURSIVE_FILL:
             Recursive_FloodFill(hdc, p, GetPixel(hdc, p.x, p.y), rgbCurrent);
             currentCursor = NULL;
@@ -1185,6 +1315,7 @@ HMENU CreateMenus()
     HMENU fillingMenu = CreateMenu();
     HMENU clippingMenu = CreateMenu();
     HMENU circleMenu = CreateMenu();
+    HMENU ellipseMenu = CreateMenu();
     HMENU curvesMenu = CreateMenu();
     HMENU shapesMenu = CreateMenu();
     HMENU filledPolygonMenu = CreateMenu();
@@ -1223,6 +1354,7 @@ HMENU CreateMenus()
     AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MODIFIEDMIDPOINT, L"Modified Midpoint");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)circleMenu, L"Circle");
 
+
     AppendMenuW(curvesMenu, MF_STRING, IDM_CARDINAL_SPLINE, L"Cardinal Spline");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)curvesMenu, L"Curve");
 
@@ -1230,6 +1362,10 @@ HMENU CreateMenus()
     AppendMenuW(shapesMenu, MF_STRING, IDM_GENERATE_POLYGON, L"Polygon");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)shapesMenu, L"Shapes");
 
+    AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_DIRECT, L"Direct");
+    AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_MIDPOINT, L"Midpoint");
+    AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_POLAR, L"Polar");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)ellipseMenu, L"Ellipse");
     return hMenubar;
 }
 
@@ -1259,7 +1395,7 @@ bool HDCToFile(const wchar_t *FilePath, HDC Context, RECT Area, uint16_t BitsPer
     BitBlt(MemDC, 0, 0, Width, Height, Context, Area.left, Area.top, SRCCOPY);
     DeleteDC(MemDC);
 
-    std::fstream hFile(FilePath, std::ios::out | std::ios::binary);
+/*    std::fstream hFile(FilePath, std::ios::out | std::ios::binary);
     if (hFile.is_open())
     {
         hFile.write((char *)&Header, sizeof(Header));
@@ -1269,7 +1405,7 @@ bool HDCToFile(const wchar_t *FilePath, HDC Context, RECT Area, uint16_t BitsPer
         DeleteObject(Section);
         return true;
     }
-
+*/
     DeleteObject(Section);
     return false;
 }
