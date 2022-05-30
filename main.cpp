@@ -30,8 +30,6 @@
 #define IDM_CIRCLE_MIDPOINT 18
 #define IDM_CIRCLE_MODIFIEDMIDPOINT 19
 
-
-
 #define IDM_GENERATE_POLYGON 20
 #define IDM_CARDINAL_SPLINE 21
 #define IDM_GENERATE_POINT 22
@@ -343,7 +341,7 @@ void MidPointLine(HDC hdc, point p1, point p2, COLORREF c)
         }
     }
 }
-void paremetricLine(HDC hdc, double x1, double y1, double x2, double y2, COLORREF c)
+void parametricLine(HDC hdc, double x1, double y1, double x2, double y2, COLORREF c)
 {
     cout << " ParametricLine with X1 = " << x1 << " Y1 = " << y1 << " X2 = " << x2 << " Y2 = " << y2 << endl;
     double x, y;
@@ -388,83 +386,95 @@ void non_recursiveFloodFill(HDC hdc, point p, COLORREF filledColor)
     }
 }
 ///--------------------------------------------ellipse----------------------------------------
-void Draw4points(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
+void Draw4points(HDC hdc, int xc, int yc, int x, int y, COLORREF color)
 {
-    SetPixel(hdc,xc+x,yc+y,color);
-    SetPixel(hdc,xc+x,yc-y,color);
-    SetPixel(hdc,xc-x,yc+y,color);
-    SetPixel(hdc,xc-x,yc-y,color);
+    SetPixel(hdc, xc + x, yc + y, color);
+    SetPixel(hdc, xc + x, yc - y, color);
+    SetPixel(hdc, xc - x, yc + y, color);
+    SetPixel(hdc, xc - x, yc - y, color);
 }
 
-void ellipseDirect(HDC hdc, int xc, int yc, int a, int b, COLORREF c) {
-	int x = 0;
-	double y = b;
-	Draw4points(hdc, xc, yc, x, Round(y), c);
-	while (x * b * b < y * a * a) {
-		x++;
-		y = b * sqrt(1 - (x * x * 1.0) / (a * a));
-		Draw4points(hdc,xc, yc, x, Round(y), c);
-	}
-	int y1 = 0;
-	double x1 = a;
-	Draw4points(hdc,xc, yc, Round(x1), y1, c);
-	while (x1 * b * b > y1 * a * a) {
-		y1++;
-		x1 = a * sqrt(1 - (y1 * y1 * 1.0) / (b * b));
-		Draw4points(hdc,xc, yc, Round(x1), y1, c);
-	}
+void ellipseDirect(HDC hdc, int xc, int yc, int a, int b, COLORREF c)
+{
+    int x = 0;
+    double y = b;
+    Draw4points(hdc, xc, yc, x, Round(y), c);
+    while (x * b * b < y * a * a)
+    {
+        x++;
+        y = b * sqrt(1 - (x * x * 1.0) / (a * a));
+        Draw4points(hdc, xc, yc, x, Round(y), c);
+    }
+    int y1 = 0;
+    double x1 = a;
+    Draw4points(hdc, xc, yc, Round(x1), y1, c);
+    while (x1 * b * b > y1 * a * a)
+    {
+        y1++;
+        x1 = a * sqrt(1 - (y1 * y1 * 1.0) / (b * b));
+        Draw4points(hdc, xc, yc, Round(x1), y1, c);
+    }
 }
-void ellipsePolar(HDC hdc, int xc, int yc, int a, int b, COLORREF c) {
-	double x = a;
-	double y = 0;
-	double theta = 0;
-	double dtheta = 1.0 / ((a+b));
-	double cd = cos(dtheta);
-	double sd = sin(dtheta);
+void ellipsePolar(HDC hdc, int xc, int yc, int a, int b, COLORREF c)
+{
+    double x = a;
+    double y = 0;
+    double theta = 0;
+    double dtheta = 1.0 / ((a + b));
+    double cd = cos(dtheta);
+    double sd = sin(dtheta);
 
-	Draw4points(hdc,xc, yc, Round(x), Round(y),  c);
-	while (x>0) {
-		x = a * cos(theta);
-		y = b * sin(theta);
-		theta += dtheta;
-		Draw4points(hdc,xc, yc, Round(x), Round(y),c);
-	}
+    Draw4points(hdc, xc, yc, Round(x), Round(y), c);
+    while (x > 0)
+    {
+        x = a * cos(theta);
+        y = b * sin(theta);
+        theta += dtheta;
+        Draw4points(hdc, xc, yc, Round(x), Round(y), c);
+    }
 }
 
-void ellipseMidpoint(HDC hdc, int xc, int yc, int a, int b, COLORREF c) {
-	int x = 0, y = b;
-	int b2 = b * b;
-	int a2 = a * a;
-	double d = b2 + a2 * pow((b - 0.5), 2) - a2 * b2;
-	Draw4points(hdc,xc, yc, x, y, c);
-	while (x * b * b < y * a * a) {
-		if (d <= 0) {
-			d += b2 * (2 * x + 3);
-			x++;
-		}
-		else {
-			d += b2 * (2 * x + 3) + a2 * (-2 * y + 2);
-			x++;
-			y--;
-		}
-		Draw4points(hdc,xc, yc, x, y, c);
-	}
-	x = a;
-	y = 0;
-	d = b2 * pow((a - 0.5), 2) + a2 - a2 * b2;
-	Draw4points(hdc,xc, yc, x, y, c);
-	while (x * b * b > y * a * a) {
-		if (d <= 0) {
-			d += a2 * (2 * y + 3);
-			y++;
-		}
-		else {
-			d += a2 * (2 * y + 3) + b2 * (-2 * x + 2);
-			x--;
-			y++;
-		}
-		Draw4points(hdc,xc, yc, x, y, c);
-	}
+void ellipseMidpoint(HDC hdc, int xc, int yc, int a, int b, COLORREF c)
+{
+    int x = 0, y = b;
+    int b2 = b * b;
+    int a2 = a * a;
+    double d = b2 + a2 * pow((b - 0.5), 2) - a2 * b2;
+    Draw4points(hdc, xc, yc, x, y, c);
+    while (x * b * b < y * a * a)
+    {
+        if (d <= 0)
+        {
+            d += b2 * (2 * x + 3);
+            x++;
+        }
+        else
+        {
+            d += b2 * (2 * x + 3) + a2 * (-2 * y + 2);
+            x++;
+            y--;
+        }
+        Draw4points(hdc, xc, yc, x, y, c);
+    }
+    x = a;
+    y = 0;
+    d = b2 * pow((a - 0.5), 2) + a2 - a2 * b2;
+    Draw4points(hdc, xc, yc, x, y, c);
+    while (x * b * b > y * a * a)
+    {
+        if (d <= 0)
+        {
+            d += a2 * (2 * y + 3);
+            y++;
+        }
+        else
+        {
+            d += a2 * (2 * y + 3) + b2 * (-2 * x + 2);
+            x--;
+            y++;
+        }
+        Draw4points(hdc, xc, yc, x, y, c);
+    }
 }
 ///--------------------------------------------circle----------------------------------------
 void Draw8points(HDC hdc, int xc, int yc, int a, int b, COLORREF color)
@@ -565,68 +575,60 @@ double CalcRadius(int Xc, int Yc, int X, int Y)
 }
 
 ///----------------------------------------------Fill Quarter Circle with Lines-------------------------------------
-void Draw8PointsQuarter1Line(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
+void Draw8PointsQuarter1Line(HDC hdc, int xc, int yc, int x, int y, COLORREF color)
 {
-    SetPixel(hdc,xc+x,yc+y,color);
-    SetPixel(hdc,xc-x,yc+y,color);
-    SetPixel(hdc,xc-x,yc-y,color);
-    SetPixel(hdc,xc+x,yc-y,color);
-    paremetricLine(hdc,xc,yc,xc+x,yc-y,color);
-    SetPixel(hdc,xc+y,yc+x,color);
-    SetPixel(hdc,xc-y,yc+x,color);
-    SetPixel(hdc,xc-y,yc-x,color);
-    SetPixel(hdc,xc+y,yc-x,color);
-    paremetricLine(hdc,xc,yc,xc+y,yc-x,color);
-
-
+    SetPixel(hdc, xc + x, yc + y, color);
+    SetPixel(hdc, xc - x, yc + y, color);
+    SetPixel(hdc, xc - x, yc - y, color);
+    SetPixel(hdc, xc + x, yc - y, color);
+    lineDDA(hdc, {xc, yc}, {xc + x, yc - y}, color);
+    SetPixel(hdc, xc + y, yc + x, color);
+    SetPixel(hdc, xc - y, yc + x, color);
+    SetPixel(hdc, xc - y, yc - x, color);
+    SetPixel(hdc, xc + y, yc - x, color);
+    lineDDA(hdc, {xc, yc}, {xc + y, yc - x}, color);
 }
-void Draw8PointsQuarter2Line(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
+void Draw8PointsQuarter2Line(HDC hdc, int xc, int yc, int x, int y, COLORREF color)
 {
-    SetPixel(hdc,xc+x,yc+y,color);
-    SetPixel(hdc,xc-x,yc+y,color);
-    SetPixel(hdc,xc-x,yc-y,color);
-    paremetricLine(hdc,xc,yc,xc-x,yc-y,color);
-    SetPixel(hdc,xc+x,yc-y,color);
-    SetPixel(hdc,xc+y,yc+x,color);
-    SetPixel(hdc,xc-y,yc+x,color);
-    SetPixel(hdc,xc-y,yc-x,color);
-    paremetricLine(hdc,xc,yc,xc-y,yc-x,color);
-    SetPixel(hdc,xc+y,yc-x,color);
-
-
+    SetPixel(hdc, xc + x, yc + y, color);
+    SetPixel(hdc, xc - x, yc + y, color);
+    SetPixel(hdc, xc - x, yc - y, color);
+    lineDDA(hdc, {xc, yc}, {xc - x, yc - y}, color);
+    SetPixel(hdc, xc + x, yc - y, color);
+    SetPixel(hdc, xc + y, yc + x, color);
+    SetPixel(hdc, xc - y, yc + x, color);
+    SetPixel(hdc, xc - y, yc - x, color);
+    lineDDA(hdc, {xc, yc}, {xc - y, yc - x}, color);
+    SetPixel(hdc, xc + y, yc - x, color);
 }
-void Draw8PointsQuarter3Line(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
+void Draw8PointsQuarter3Line(HDC hdc, int xc, int yc, int x, int y, COLORREF color)
 {
-    SetPixel(hdc,xc+x,yc+y,color);
-    SetPixel(hdc,xc-x,yc+y,color);
-    paremetricLine(hdc,xc,yc,xc-x,yc+y,color);
-    SetPixel(hdc,xc-x,yc-y,color);
-    SetPixel(hdc,xc+x,yc-y,color);
-    SetPixel(hdc,xc+y,yc+x,color);
-    SetPixel(hdc,xc-y,yc+x,color);
-    paremetricLine(hdc,xc,yc,xc-y,yc+x,color);
-    SetPixel(hdc,xc-y,yc-x,color);
-    SetPixel(hdc,xc+y,yc-x,color);
-
-
+    SetPixel(hdc, xc + x, yc + y, color);
+    SetPixel(hdc, xc - x, yc + y, color);
+    lineDDA(hdc, {xc, yc}, {xc - x, yc + y}, color);
+    SetPixel(hdc, xc - x, yc - y, color);
+    SetPixel(hdc, xc + x, yc - y, color);
+    SetPixel(hdc, xc + y, yc + x, color);
+    SetPixel(hdc, xc - y, yc + x, color);
+    lineDDA(hdc, {xc, yc}, {xc - y, yc + x}, color);
+    SetPixel(hdc, xc - y, yc - x, color);
+    SetPixel(hdc, xc + y, yc - x, color);
 }
-void Draw8PointsQuarter4Line(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
+void Draw8PointsQuarter4Line(HDC hdc, int xc, int yc, int x, int y, COLORREF color)
 {
-    SetPixel(hdc,xc+x,yc+y,color);
-    paremetricLine(hdc,xc,yc,xc+x,yc+y,color);
-    SetPixel(hdc,xc-x,yc+y,color);
-    SetPixel(hdc,xc-x,yc-y,color);
-    SetPixel(hdc,xc+x,yc-y,color);
-    SetPixel(hdc,xc+y,yc+x,color);
-    paremetricLine(hdc,xc,yc,xc+y,yc+x,color);
-    SetPixel(hdc,xc-y,yc+x,color);
-    SetPixel(hdc,xc-y,yc-x,color);
-    SetPixel(hdc,xc+y,yc-x,color);
-
-
+    SetPixel(hdc, xc + x, yc + y, color);
+    lineDDA(hdc, {xc, yc}, {xc + x, yc + y}, color);
+    SetPixel(hdc, xc - x, yc + y, color);
+    SetPixel(hdc, xc - x, yc - y, color);
+    SetPixel(hdc, xc + x, yc - y, color);
+    SetPixel(hdc, xc + y, yc + x, color);
+    lineDDA(hdc, {xc, yc}, {xc + y, yc + x}, color);
+    SetPixel(hdc, xc - y, yc + x, color);
+    SetPixel(hdc, xc - y, yc - x, color);
+    SetPixel(hdc, xc + y, yc - x, color);
 }
 
-void circleIterativePolarLines(HDC hdc, int xc, int yc, int R,int quarter ,COLORREF color) // Iterative Polar
+void circleIterativePolarLines(HDC hdc, int xc, int yc, int R, int quarter, COLORREF color) // Iterative Polar
 {
     double dtheta = 1.0 / R, x = R, y = 0, c = cos(dtheta), s = sin(dtheta);
     while (x > y)
@@ -634,43 +636,50 @@ void circleIterativePolarLines(HDC hdc, int xc, int yc, int R,int quarter ,COLOR
         double x1 = x * c - y * s;
         y = x * s + y * c;
         x = x1;
-        if(quarter==1){
+        if (quarter == 1)
+        {
             Draw8PointsQuarter1Line(hdc, xc, yc, Round(x), Round(y), color);
         }
-        else if (quarter==2){
-             Draw8PointsQuarter2Line(hdc, xc, yc, Round(x), Round(y), color);
+        else if (quarter == 2)
+        {
+            Draw8PointsQuarter2Line(hdc, xc, yc, Round(x), Round(y), color);
         }
-        else if (quarter==3){
+        else if (quarter == 3)
+        {
             Draw8PointsQuarter3Line(hdc, xc, yc, Round(x), Round(y), color);
         }
-        else{
+        else
+        {
             Draw8PointsQuarter4Line(hdc, xc, yc, Round(x), Round(y), color);
         }
-
     }
 }
 ///----------------------------------------------Fill Quarter Circle with circles-------------------------------------
-void Draw8pointsCircles(HDC hdc, int xc, int yc, int a, int b,int quad,COLORREF color)
+void Draw8pointsCircles(HDC hdc, int xc, int yc, int a, int b, int quad, COLORREF color)
 {
 
-    if(quad==1){
-    SetPixel(hdc, xc + a, yc - b, color);
-    SetPixel(hdc, xc + b, yc - a, color);
+    if (quad == 1)
+    {
+        SetPixel(hdc, xc + a, yc - b, color);
+        SetPixel(hdc, xc + b, yc - a, color);
     }
-    else if(quad==2){
-    SetPixel(hdc, xc - b, yc - a, color);
-    SetPixel(hdc, xc - a, yc - b, color);
+    else if (quad == 2)
+    {
+        SetPixel(hdc, xc - b, yc - a, color);
+        SetPixel(hdc, xc - a, yc - b, color);
     }
-    else if(quad==3){
-    SetPixel(hdc, xc - a, yc + b, color);
-    SetPixel(hdc, xc - b, yc + a, color);
+    else if (quad == 3)
+    {
+        SetPixel(hdc, xc - a, yc + b, color);
+        SetPixel(hdc, xc - b, yc + a, color);
     }
-    else{
-    SetPixel(hdc, xc + a, yc + b, color);
-    SetPixel(hdc, xc + b, yc + a, color);
+    else
+    {
+        SetPixel(hdc, xc + a, yc + b, color);
+        SetPixel(hdc, xc + b, yc + a, color);
     }
 }
-void circleIterativePolarCircles(HDC hdc, int xc, int yc, int R, int quad,COLORREF color) // Iterative Polar
+void circleIterativePolarCircles(HDC hdc, int xc, int yc, int R, int quad, COLORREF color) // Iterative Polar
 {
     double dtheta = 1.0 / R, x = R, y = 0, c = cos(dtheta), s = sin(dtheta);
     while (x > y)
@@ -678,22 +687,201 @@ void circleIterativePolarCircles(HDC hdc, int xc, int yc, int R, int quad,COLORR
         double x1 = x * c - y * s;
         y = x * s + y * c;
         x = x1;
-        Draw8pointsCircles(hdc, xc, yc, Round(x), Round(y), quad,color);
-
+        Draw8pointsCircles(hdc, xc, yc, Round(x), Round(y), quad, color);
     }
 }
 
-
-
-
 ///----------------------------------------------clipping-------------------------------------
 /// point clipping with a rectangular window
-void PointClipping(HDC hdc, point p, int xleft, int ytop, int xright, int ybottom, COLORREF color)
+void PointRectangleClipping(HDC hdc, point p, int xleft, int ytop, int xright, int ybottom, COLORREF color)
 {
     if (p.x >= xleft && p.x <= xright && p.y >= ytop && p.y <= ybottom)
         SetPixel(hdc, p.x, p.y, color);
 }
 
+/// point clipping with a circle window
+void PointCircleClipping(HDC hdc, point p, point c, int R, COLORREF color)
+{
+    if ((p.x - c.x) * (p.x - c.x) + (p.y - c.y) * (p.y - c.y) <= R * R)
+    {
+        SetPixel(hdc, p.x, p.y, color);
+    }
+}
+
+void lineDDA(HDC hdc, point p1, point p2, point center, int R, COLORREF c)
+{
+    cout << " LineDDA with X1 = " << p1.x << " Y1 = " << p1.y << " X2 = " << p2.x << " Y2 = " << p2.y << endl;
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
+    if (abs(dy) <= abs(dx)) /// slope < 1
+    {
+        if (p1.x > p2.x)
+        {
+            swap(p1, p2);
+        }
+        int x = p1.x;
+        double y = p1.y;
+        double m = (double)dy / (double)dx;
+        PointCircleClipping(hdc, {x, Round(y)}, center, R, c);
+        while (x < p2.x)
+        {
+            x++;
+            y += m;
+            PointCircleClipping(hdc, {x, Round(y)}, center, R, c);
+        }
+    }
+    else /// slope > 1
+    {
+        if (p1.y > p2.y)
+        {
+            swap(p1, p2);
+        }
+        double x = p1.x;
+        int y = p1.y;
+        double minV = (double)dx / (double)dy;
+        PointCircleClipping(hdc, {Round(x), y}, center, R, c);
+        while (y < p2.y)
+        {
+            y++;
+            x += minV;
+            PointCircleClipping(hdc, {Round(x), y}, center, R, c);
+        }
+    }
+}
+
+void MidPointLine(HDC hdc, point p1, point p2, point center, int R, COLORREF c)
+{
+    cout << " Midpoint Line with X1 = " << p1.x << " Y1 = " << p1.y << " X2 = " << p2.x << " Y2 = " << p2.y << endl;
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
+    if ((dx >= 0 && 0 <= dy && dy <= dx) || (dx < 0 && 0 >= dy && dy >= dx)) /// 0 < slope < 1
+    {
+        if (p1.x > p2.x)
+        {
+            swap(p1, p2);
+            dx = p2.x - p1.x;
+            dy = p2.y - p1.y;
+        }
+        int x = p1.x, y = p1.y;
+        int d = dx - 2 * dy;
+        int d1 = 2 * (dx - dy);
+        int d2 = -2 * dy;
+        PointCircleClipping(hdc, {x, y}, center, R, c);
+        while (x < p2.x)
+        {
+            if (d <= 0)
+            {
+                d += d1;
+                y++;
+            }
+            else
+            {
+                d += d2;
+            }
+            x++;
+            PointCircleClipping(hdc, {x, y}, center, R, c);
+        }
+    }
+    else if ((dx >= 0 && dy > dx) || (dx < 0 && dy < dx)) /// slope > 1
+    {
+        if (p1.y > p2.y)
+        {
+            swap(p1, p2);
+            dx = p2.x - p1.x;
+            dy = p2.y - p1.y;
+        }
+        int x = p1.x, y = p1.y;
+        int d = 2 * dx - dy;
+        int d1 = 2 * dx;
+        int d2 = 2 * dx - 2 * dy;
+        PointCircleClipping(hdc, {x, y}, center, R, c);
+
+        while (y < p2.y)
+        {
+            if (d <= 0)
+            {
+                d += d1;
+            }
+            else
+            {
+                d += d2;
+                x++;
+            }
+            y++;
+
+            PointCircleClipping(hdc, {x, y}, center, R, c);
+        }
+    }
+    else if ((dx >= 0 && dy < -dx) || (dx < 0 && dy > -dx)) /// slope < -1
+    {
+        if (p1.y > p2.y)
+        {
+            swap(p1, p2);
+            dx = p2.x - p1.x;
+            dy = p2.y - p1.y;
+        }
+        int x = p1.x, y = p1.y;
+        int d = 2 * dx + dy;
+        int d1 = 2 * (dx + dy);
+        int d2 = 2 * dx;
+        PointCircleClipping(hdc, {x, y}, center, R, c);
+
+        while (y < p2.y)
+        {
+            if (d <= 0)
+            {
+                d += d1;
+                x--;
+            }
+            else
+            {
+                d += d2;
+            }
+            y++;
+
+            PointCircleClipping(hdc, {x, y}, center, R, c);
+        }
+    }
+    else
+    {
+        if (p1.x > p2.x)
+        {
+            swap(p1, p2);
+            dx = p2.x - p1.x;
+            dy = p2.y - p1.y;
+        }
+        int x = p1.x, y = p1.y;
+        int d = -dx - 2 * dy;
+        int d1 = -2 * dy;
+        int d2 = 2 * (-dx - dy);
+        PointCircleClipping(hdc, {x, y}, center, R, c);
+        while (x < p2.x)
+        {
+            if (d <= 0)
+            {
+                d += d1;
+            }
+            else
+            {
+                d += d2;
+                y--;
+            }
+            x++;
+            PointCircleClipping(hdc, {x, y}, center, R, c);
+        }
+    }
+}
+void parametricLine(HDC hdc, double x1, double y1, double x2, double y2, point center, int R, COLORREF c)
+{
+    cout << " ParametricLine with X1 = " << x1 << " Y1 = " << y1 << " X2 = " << x2 << " Y2 = " << y2 << endl;
+    double x, y;
+    for (double t = 0; t < 1; t += 0.0001)
+    {
+        x = x1 + t * (x2 - x1);
+        y = y1 + t * (y2 - y1);
+        PointCircleClipping(hdc, {Round(x), Round(y)}, center, R, c);
+    }
+}
 /// line clipping with a rectangular window
 
 union OutCode
@@ -719,12 +907,12 @@ OutCode GetOutCode(point p1, int xleft, int ytop, int xright, int ybottom)
     return out;
 }
 
-void VIntersect(point p1, point p2, int x, double *xi, double *yi)
+void VIntersect(point p1, point p2, int x, int *xi, int *yi)
 {
     *xi = x;
     *yi = p1.y + (x - p1.x) * (p2.y - p1.y) / (p2.x - p1.x);
 }
-void HIntersect(point p1, point p2, int y, double *xi, double *yi)
+void HIntersect(point p1, point p2, int y, int *xi, int *yi)
 {
     *yi = y;
     *xi = p1.x + (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y);
@@ -742,7 +930,7 @@ void CohenSuth(HDC hdc, point p1, point p2, int xleft, int ytop, int xright, int
     OutCode out2 = GetOutCode(pEnd, xleft, ytop, xright, ybottom);
     while ((out1.All || out2.All) && !(out1.All & out2.All))
     {
-        double xi, yi;
+        int xi, yi;
         if (out1.All)
         {
             if (out1.left)
@@ -778,7 +966,7 @@ void CohenSuth(HDC hdc, point p1, point p2, int xleft, int ytop, int xright, int
         if (choice == 1) /// DDA
             lineDDA(hdc, pStart, pEnd, c);
         else if (choice == 2) /// parametric line
-            paremetricLine(hdc, Round(pStart.x), Round(pStart.y), Round(pEnd.x), Round(pEnd.y), c);
+            parametricLine(hdc, Round(pStart.x), Round(pStart.y), Round(pEnd.x), Round(pEnd.y), c);
 
         else if (choice == 3) /// midpoint Line
             MidPointLine(hdc, pStart, pEnd, c);
@@ -1130,7 +1318,6 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             break;
         }
 
-
         break;
     case WM_SETCURSOR:
         if (currentCursor != NULL)
@@ -1199,6 +1386,11 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 {
                     CohenSuth(hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y, 1, rgbCurrent);
                 }
+                else if (circleWindow)
+                {
+                    R = CalcRadius(window[0].x, window[0].y, window[1].x, window[1].y);
+                    lineDDA(hdc, points[0], points[1], window[0], R, rgbCurrent);
+                }
                 else
                 {
                     lineDDA(hdc, points[0], points[1], rgbCurrent);
@@ -1219,6 +1411,11 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 {
                     CohenSuth(hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y, 3, rgbCurrent);
                 }
+                else if (circleWindow)
+                {
+                    R = CalcRadius(window[0].x, window[0].y, window[1].x, window[1].y);
+                    MidPointLine(hdc, points[0], points[1], window[0], R, rgbCurrent);
+                }
                 else
                 {
 
@@ -1237,9 +1434,14 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 {
                     CohenSuth(hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y, 2, rgbCurrent);
                 }
+                else if (circleWindow)
+                {
+                    R = CalcRadius(window[0].x, window[0].y, window[1].x, window[1].y);
+                    parametricLine(hdc, (double)points[0].x, (double)points[0].y, (double)points[1].x, (double)points[1].y, window[0], R, rgbCurrent);
+                }
                 else
                 {
-                    paremetricLine(hdc, (double)points[0].x, (double)points[0].y, (double)points[1].x, (double)points[1].y, rgbCurrent);
+                    parametricLine(hdc, (double)points[0].x, (double)points[0].y, (double)points[1].x, (double)points[1].y, rgbCurrent);
                 }
                 currentCursor = NULL;
                 currentFunction = -1;
@@ -1256,7 +1458,12 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             points.push_back(p);
             if (rectangleWindow)
             {
-                PointClipping(hdc, points[0], window[0].x, window[0].y, window[1].x, window[1].y, rgbCurrent);
+                PointRectangleClipping(hdc, points[0], window[0].x, window[0].y, window[1].x, window[1].y, rgbCurrent);
+            }
+            else if (circleWindow)
+            {
+                R = CalcRadius(window[0].x, window[0].y, window[1].x, window[1].y);
+                PointCircleClipping(hdc, points[0], window[0], R, rgbCurrent);
             }
             else
             {
@@ -1333,9 +1540,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             points.push_back(p);
             if (points.size() == 3)
             {
-                int a=CalcRadius(points[0].x,points[0].y,points[1].x, points[1].y);
-                int b=CalcRadius(points[0].x,points[0].y,points[2].x, points[2].y);
-                ellipseDirect(hdc, points[0].x, points[0].y, a,b, rgbCurrent);
+                int a = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                int b = CalcRadius(points[0].x, points[0].y, points[2].x, points[2].y);
+                ellipseDirect(hdc, points[0].x, points[0].y, a, b, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 cout << "Drawing direct ellipse" << endl;
@@ -1346,9 +1553,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             points.push_back(p);
             if (points.size() == 3)
             {
-                int a=CalcRadius(points[0].x,points[0].y,points[1].x, points[1].y);
-                int b=CalcRadius(points[0].x,points[0].y,points[2].x, points[2].y);
-                ellipseMidpoint(hdc, points[0].x, points[0].y, a,b, rgbCurrent);
+                int a = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                int b = CalcRadius(points[0].x, points[0].y, points[2].x, points[2].y);
+                ellipseMidpoint(hdc, points[0].x, points[0].y, a, b, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 cout << "Drawing midpoint ellipse" << endl;
@@ -1359,9 +1566,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             points.push_back(p);
             if (points.size() == 3)
             {
-                int a=CalcRadius(points[0].x,points[0].y,points[1].x, points[1].y);
-                int b=CalcRadius(points[0].x,points[0].y,points[2].x, points[2].y);
-                ellipsePolar(hdc, points[0].x, points[0].y, a,b, rgbCurrent);
+                int a = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                int b = CalcRadius(points[0].x, points[0].y, points[2].x, points[2].y);
+                ellipsePolar(hdc, points[0].x, points[0].y, a, b, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 cout << "Drawing polar ellipse" << endl;
@@ -1373,7 +1580,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             if (points.size() == 2)
             {
                 R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
-                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 1,rgbCurrent);
+                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 1, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
@@ -1384,7 +1591,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             if (points.size() == 2)
             {
                 R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
-                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 2,rgbCurrent);
+                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 2, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
@@ -1395,7 +1602,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             if (points.size() == 2)
             {
                 R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
-                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 3,rgbCurrent);
+                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 3, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
@@ -1406,7 +1613,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             if (points.size() == 2)
             {
                 R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
-                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 4,rgbCurrent);
+                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 4, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
@@ -1417,9 +1624,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             if (points.size() == 2)
             {
                 R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
-                circleIterativePolar(hdc, points[0].x, points[0].y, R,rgbCurrent);
-                for(int i=0;i<=R;i++){
-                circleIterativePolarCircles(hdc,points[0].x,points[0].y,i,1,rgbCurrent);
+                circleIterativePolar(hdc, points[0].x, points[0].y, R, rgbCurrent);
+                for (int i = 0; i <= R; i++)
+                {
+                    circleIterativePolarCircles(hdc, points[0].x, points[0].y, i, 1, rgbCurrent);
                 }
                 currentCursor = NULL;
                 currentFunction = -1;
@@ -1431,9 +1639,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             if (points.size() == 2)
             {
                 R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
-                circleIterativePolar(hdc, points[0].x, points[0].y, R,rgbCurrent);
-                for(int i=0;i<=R;i++){
-                circleIterativePolarCircles(hdc,points[0].x,points[0].y,i,2,rgbCurrent);
+                circleIterativePolar(hdc, points[0].x, points[0].y, R, rgbCurrent);
+                for (int i = 0; i <= R; i++)
+                {
+                    circleIterativePolarCircles(hdc, points[0].x, points[0].y, i, 2, rgbCurrent);
                 }
                 currentCursor = NULL;
                 currentFunction = -1;
@@ -1445,9 +1654,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             if (points.size() == 2)
             {
                 R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
-                circleIterativePolar(hdc, points[0].x, points[0].y, R,rgbCurrent);
-                for(int i=0;i<=R;i++){
-                circleIterativePolarCircles(hdc,points[0].x,points[0].y,i,3,rgbCurrent);
+                circleIterativePolar(hdc, points[0].x, points[0].y, R, rgbCurrent);
+                for (int i = 0; i <= R; i++)
+                {
+                    circleIterativePolarCircles(hdc, points[0].x, points[0].y, i, 3, rgbCurrent);
                 }
                 currentCursor = NULL;
                 currentFunction = -1;
@@ -1459,9 +1669,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             if (points.size() == 2)
             {
                 R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
-                circleIterativePolar(hdc, points[0].x, points[0].y, R,rgbCurrent);
-                for(int i=0;i<=R;i++){
-                circleIterativePolarCircles(hdc,points[0].x,points[0].y,i,4,rgbCurrent);
+                circleIterativePolar(hdc, points[0].x, points[0].y, R, rgbCurrent);
+                for (int i = 0; i <= R; i++)
+                {
+                    circleIterativePolarCircles(hdc, points[0].x, points[0].y, i, 4, rgbCurrent);
                 }
                 currentCursor = NULL;
                 currentFunction = -1;
@@ -1497,7 +1708,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 window[1] = {window[0].x + edge, window[0].y + edge};
                 generateRectangle(hdc, window[0], window[1], rgbCurrent);
                 rectangleWindow = true;
+                circleWindow = false;
                 CheckMenuItem(hMenubar, IDM_SQUARE_CLIPPING, MF_CHECKED);
+                CheckMenuItem(hMenubar, IDM_RECTANGLE_CLIPPING, MF_UNCHECKED);
+                CheckMenuItem(hMenubar, IDM_CIRCLE_CLIPPING, MF_UNCHECKED);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
@@ -1509,19 +1723,25 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             {
                 generateRectangle(hdc, window[0], window[1], rgbCurrent);
                 rectangleWindow = true;
+                circleWindow = false;
+                CheckMenuItem(hMenubar, IDM_SQUARE_CLIPPING, MF_UNCHECKED);
                 CheckMenuItem(hMenubar, IDM_RECTANGLE_CLIPPING, MF_CHECKED);
+                CheckMenuItem(hMenubar, IDM_CIRCLE_CLIPPING, MF_UNCHECKED);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
             break;
         case IDM_CIRCLE_CLIPPING:
-            points.push_back(p);
-            if (points.size() == 2)
+            window.push_back(p);
+            if (window.size() == 2)
             {
-                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
-                circleDirect(hdc, points[0].x, points[0].y, R, rgbCurrent);
+                R = CalcRadius(window[0].x, window[0].y, window[1].x, window[1].y);
+                circleDirect(hdc, window[0].x, window[0].y, R, rgbCurrent);
                 circleWindow = true;
+                rectangleWindow = false;
+                CheckMenuItem(hMenubar, IDM_SQUARE_CLIPPING, MF_UNCHECKED);
+                CheckMenuItem(hMenubar, IDM_RECTANGLE_CLIPPING, MF_UNCHECKED);
                 CheckMenuItem(hMenubar, IDM_CIRCLE_CLIPPING, MF_CHECKED);
                 currentCursor = NULL;
                 currentFunction = -1;
@@ -1595,7 +1815,6 @@ HMENU CreateMenus()
     AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MODIFIEDMIDPOINT, L"Modified Midpoint");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)circleMenu, L"Circle");
 
-
     AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_DIRECT, L"Direct");
     AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_MIDPOINT, L"Midpoint");
     AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_POLAR, L"Polar");
@@ -1648,7 +1867,7 @@ bool HDCToFile(const wchar_t *FilePath, HDC Context, RECT Area, uint16_t BitsPer
     BitBlt(MemDC, 0, 0, Width, Height, Context, Area.left, Area.top, SRCCOPY);
     DeleteDC(MemDC);
 
-/*    std::fstream hFile(FilePath, std::ios::out | std::ios::binary);
+    std::fstream hFile(FilePath, std::ios::out | std::ios::binary);
     if (hFile.is_open())
     {
         hFile.write((char *)&Header, sizeof(Header));
@@ -1658,7 +1877,7 @@ bool HDCToFile(const wchar_t *FilePath, HDC Context, RECT Area, uint16_t BitsPer
         DeleteObject(Section);
         return true;
     }
-*/
+
     DeleteObject(Section);
     return false;
 }
