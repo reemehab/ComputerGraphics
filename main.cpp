@@ -1868,17 +1868,17 @@ bool HDCToFile(const wchar_t *FilePath, HDC Context, RECT Area, uint16_t BitsPer
     BitBlt(MemDC, 0, 0, Width, Height, Context, Area.left, Area.top, SRCCOPY);
     DeleteDC(MemDC);
 
-    /*    std::fstream hFile(FilePath, std::ios::out | std::ios::binary);
-        if (hFile.is_open())
-        {
-            hFile.write((char *)&Header, sizeof(Header));
-            hFile.write((char *)&Info.bmiHeader, sizeof(Info.bmiHeader));
-            hFile.write(Pixels, (((BitsPerPixel * Width + 31) & ~31) / 8) * Height);
-            hFile.close();
-            DeleteObject(Section);
-            return true;
-        }
-    */
+    std::fstream hFile(FilePath, std::ios::out | std::ios::binary);
+    if (hFile.is_open())
+    {
+        hFile.write((char *)&Header, sizeof(Header));
+        hFile.write((char *)&Info.bmiHeader, sizeof(Info.bmiHeader));
+        hFile.write(Pixels, (((BitsPerPixel * Width + 31) & ~31) / 8) * Height);
+        hFile.close();
+        DeleteObject(Section);
+        return true;
+    }
+
     DeleteObject(Section);
     return false;
 }
