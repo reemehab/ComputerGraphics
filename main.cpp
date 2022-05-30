@@ -7,30 +7,32 @@
 #define IDM_FILE_SAVE 1
 #define IDM_FILE_OPEN 2
 
-#define IDM_EDIT_CHOOSECOLOR 4
-#define IDM_EDIT_CLEAR 5
+#define IDM_EDIT_CHOOSECOLOR 3
+#define IDM_EDIT_CLEAR 4
 
-#define IDM_LINE_MIDPOINT 6
-#define IDM_LINE_DDA 7
-#define IDM_LINE_PARAMETRIC 8
+#define IDM_LINE_MIDPOINT 5
+#define IDM_LINE_DDA 6
+#define IDM_LINE_PARAMETRIC 7
 
-#define IDM_Recursive_Fill 9
-#define IDM_Non_Recursive_Fill 10
-#define IDM_Convex_Filling 22
+#define IDM_RECURSIVE_FILL 8
+#define IDM_NON_RECURSIVE_FILL 9
 
-#define CircleWindow 11
-#define IDM_rectangleClipping 12
-#define IDM_squareClipping 13
+#define IDM_CONVEX_FILLING 10
+#define IDM_NON_CONVEX_FILLING 11
 
-#define IDM_CIRCLE_DIRECT 14
-#define IDM_CIRCLE_POLAR 15
-#define IDM_CIRCLE_ITERATIVEPOLAR 16
-#define IDM_CIRCLE_MIDPOINT 17
-#define IDM_CIRCLE_MODIFIEDMIDPOINT 18
+#define IDM_CIRCLE_CLIPPING 12
+#define IDM_RECTANGLE_CLIPPING 13
+#define IDM_SQUARE_CLIPPING 14
 
-#define IDM_GENERATE_POLYGON 19
-#define IDM_Cardinal_Spline 20
-#define IDM_GENERATE_POINT 21
+#define IDM_CIRCLE_DIRECT 15
+#define IDM_CIRCLE_POLAR 16
+#define IDM_CIRCLE_ITERATIVEPOLAR 17
+#define IDM_CIRCLE_MIDPOINT 18
+#define IDM_CIRCLE_MODIFIEDMIDPOINT 19
+
+#define IDM_GENERATE_POLYGON 20
+#define IDM_CARDINAL_SPLINE 21
+#define IDM_GENERATE_POINT 22
 
 #include <cmath>
 #include <list>
@@ -651,7 +653,7 @@ void InitEntries(Entry table[])
         table[i].xmax = -1e9;
     }
 }
-void ScanEdge(POINT v1, POINT v2, Entry table[])
+void ScanEdge(point v1, point v2, Entry table[])
 {
     if (v1.y == v2.y)
         return;
@@ -678,14 +680,14 @@ void DrawSanLines(HDC hdc, Entry table[], COLORREF color)
                 SetPixel(hdc, x, y, color);
 }
 
-void ConvexFill(HDC hdc, POINT p[], int n, COLORREF color)
+void ConvexFill(HDC hdc, vector<point> p, COLORREF color)
 {
-    Entry *table = new Entry[800];
+    Entry *table = new Entry[1920];
     InitEntries(table);
-    POINT v1 = p[n - 1];
-    for (int i = 0; i < n; i++)
+    point v1 = p[p.size() - 1];
+    for (int i = 0; i < p.size(); i++)
     {
-        POINT v2 = p[i];
+        point v2 = p[i];
         ScanEdge(v1, v2, table);
         v1 = p[i];
     }
@@ -705,7 +707,7 @@ struct EdgeRec
     }
 };
 typedef list<EdgeRec> EdgeList;
-EdgeRec InitEdgeRec(POINT &v1, POINT &v2)
+EdgeRec InitEdgeRec(point &v1, point &v2)
 {
     if (v1.y > v2.y)
         swap(v1, v2);
@@ -715,12 +717,12 @@ EdgeRec InitEdgeRec(POINT &v1, POINT &v2)
     rec.minv = (double)(v2.x - v1.x) / (v2.y - v1.y);
     return rec;
 }
-void InitEdgeTable(POINT *polygon, int n, EdgeList table[])
+void InitEdgeTable(vector<point> polygon, EdgeList table[])
 {
-    POINT v1 = polygon[n - 1];
-    for (int i = 0; i < n; i++)
+    point v1 = polygon[polygon.size() - 1];
+    for (int i = 0; i < polygon.size(); i++)
     {
-        POINT v2 = polygon[i];
+        point v2 = polygon[i];
         if (v1.y == v2.y)
         {
             v1 = v2;
@@ -732,14 +734,14 @@ void InitEdgeTable(POINT *polygon, int n, EdgeList table[])
     }
 }
 
-void GeneralPolygonFill(HDC hdc, POINT *polygon, int n, COLORREF c)
+void GeneralPolygonFill(HDC hdc, vector<point> polygon, COLORREF c)
 {
-    EdgeList *table = new EdgeList[800];
-    InitEdgeTable(polygon, n, table);
+    EdgeList *table = new EdgeList[1920];
+    InitEdgeTable(polygon, table);
     int y = 0;
-    while (y < 800 && table[y].size() == 0)
+    while (y < 1920 && table[y].size() == 0)
         y++;
-    if (y == 800)
+    if (y == 1920)
         return;
     EdgeList ActiveList = table[y];
     while (ActiveList.size() > 0)
@@ -813,44 +815,63 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         {
             RECT rect;
             GetClientRect(hwnd, &rect);
+            rectangleWindow = false;
+            circleWindow = false;
+            currentFunction = -1;
+            currentCursor = NULL;
+            CheckMenuItem(hMenubar, IDM_RECTANGLE_CLIPPING, MF_UNCHECKED);
+            CheckMenuItem(hMenubar, IDM_SQUARE_CLIPPING, MF_UNCHECKED);
+            CheckMenuItem(hMenubar, IDM_CIRCLE_CLIPPING, MF_UNCHECKED);
+            points.clear();
+            window.clear();
 
             Rectangle(hdc, -1, -1, rect.right - rect.left + 1, rect.bottom - rect.top + 1);
         }
         break;
 
-        case IDM_rectangleClipping:
+        case IDM_RECTANGLE_CLIPPING:
             if (rectangleWindow)
             {
                 rectangleWindow = false;
-                CheckMenuItem(hMenubar, IDM_rectangleClipping, MF_UNCHECKED);
+                currentFunction = -1;
+                currentCursor = NULL;
+                CheckMenuItem(hMenubar, IDM_RECTANGLE_CLIPPING, MF_UNCHECKED);
+                window.clear();
             }
             else
             {
                 currentFunction = LOWORD(wParam);
                 points.clear();
+                window.clear();
                 currentCursor = &cPlus;
                 break;
             }
             break;
-        case IDM_squareClipping:
+        case IDM_SQUARE_CLIPPING:
             if (rectangleWindow)
             {
                 rectangleWindow = false;
-                CheckMenuItem(hMenubar, IDM_squareClipping, MF_UNCHECKED);
+                currentFunction = -1;
+                currentCursor = NULL;
+                CheckMenuItem(hMenubar, IDM_SQUARE_CLIPPING, MF_UNCHECKED);
+                window.clear();
             }
             else
             {
                 currentFunction = LOWORD(wParam);
                 points.clear();
+                window.clear();
                 currentCursor = &cPlus;
                 break;
             }
             break;
-        case CircleWindow:
+        case IDM_CIRCLE_CLIPPING:
             if (circleWindow)
             {
                 circleWindow = false;
-                CheckMenuItem(hMenubar, CircleWindow, MF_UNCHECKED);
+                currentFunction = -1;
+                currentCursor = NULL;
+                CheckMenuItem(hMenubar, IDM_CIRCLE_CLIPPING, MF_UNCHECKED);
             }
             else
             {
@@ -863,17 +884,18 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_LINE_DDA:
         case IDM_LINE_MIDPOINT:
         case IDM_LINE_PARAMETRIC:
-        case IDM_Recursive_Fill:
-        case IDM_Non_Recursive_Fill:
+        case IDM_RECURSIVE_FILL:
+        case IDM_NON_RECURSIVE_FILL:
         case IDM_CIRCLE_DIRECT:
         case IDM_CIRCLE_POLAR:
         case IDM_CIRCLE_ITERATIVEPOLAR:
         case IDM_CIRCLE_MIDPOINT:
         case IDM_CIRCLE_MODIFIEDMIDPOINT:
         case IDM_GENERATE_POLYGON:
-        case IDM_Cardinal_Spline:
+        case IDM_CARDINAL_SPLINE:
         case IDM_GENERATE_POINT:
-        case IDM_Convex_Filling:
+        case IDM_CONVEX_FILLING:
+        case IDM_NON_CONVEX_FILLING:
             currentFunction = LOWORD(wParam);
             points.clear();
             currentCursor = &cPlus;
@@ -896,14 +918,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_GENERATE_POLYGON:
             if (!rectangleWindow)
             {
-                int x = points.size();
-                POINT *tmp = new POINT[x];
                 generatePolygon(hdc, points, rgbCurrent);
-                for (int i = 0; i < x; i++)
-                {
-                    tmp[i].x = points[i].x;
-                    tmp[i].y = points[i].y;
-                }
             }
             else
             {
@@ -913,7 +928,19 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             currentFunction = -1;
             points.clear();
             break;
-        case IDM_Cardinal_Spline:
+        case IDM_CONVEX_FILLING:
+            ConvexFill(hdc, points, rgbCurrent);
+            currentCursor = NULL;
+            currentFunction = -1;
+            points.clear();
+            break;
+        case IDM_NON_CONVEX_FILLING:
+            GeneralPolygonFill(hdc, points, rgbCurrent);
+            currentCursor = NULL;
+            currentFunction = -1;
+            points.clear();
+            break;
+        case IDM_CARDINAL_SPLINE:
             for (int i = 0; i < points.size(); i++)
             {
                 cout << points[i].x << " " << points[i].y << endl;
@@ -991,6 +1018,8 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             }
 
             break;
+        case IDM_CONVEX_FILLING:
+        case IDM_NON_CONVEX_FILLING:
         case IDM_GENERATE_POLYGON:
             points.push_back(p);
             break;
@@ -1070,48 +1099,67 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 points.clear();
             }
             break;
-        case IDM_Recursive_Fill:
+        case IDM_RECURSIVE_FILL:
             Recursive_FloodFill(hdc, p, GetPixel(hdc, p.x, p.y), rgbCurrent);
             currentCursor = NULL;
             currentFunction = -1;
             points.clear();
 
             break;
-        case IDM_Non_Recursive_Fill:
+        case IDM_NON_RECURSIVE_FILL:
             non_recursiveFloodFill(hdc, p, rgbCurrent);
             currentCursor = NULL;
             currentFunction = -1;
             points.clear();
             break;
-        case IDM_Convex_Filling:
-            break;
-        case IDM_rectangleClipping:
-            points.push_back(p);
+        case IDM_SQUARE_CLIPPING:
             window.push_back(p);
-            if (points.size() == 2)
+            if (window.size() == 2)
             {
-                generateRectangle(hdc, points[0], points[1], rgbCurrent);
+                int edge;
+                if (abs(window[0].x - window[1].x) > abs(window[0].y - window[1].y))
+                {
+                    edge = window[1].y - window[0].y;
+                }
+                else
+                {
+                    edge = window[1].x - window[0].x;
+                }
+                window[1] = {window[0].x + edge, window[0].y + edge};
+                generateRectangle(hdc, window[0], window[1], rgbCurrent);
                 rectangleWindow = true;
-                CheckMenuItem(hMenubar, IDM_rectangleClipping, MF_CHECKED);
+                CheckMenuItem(hMenubar, IDM_SQUARE_CLIPPING, MF_CHECKED);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
             break;
-        case CircleWindow:
+        case IDM_RECTANGLE_CLIPPING:
+            window.push_back(p);
+            if (window.size() == 2)
+            {
+                generateRectangle(hdc, window[0], window[1], rgbCurrent);
+                rectangleWindow = true;
+                CheckMenuItem(hMenubar, IDM_RECTANGLE_CLIPPING, MF_CHECKED);
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_CIRCLE_CLIPPING:
             points.push_back(p);
             if (points.size() == 2)
             {
                 R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
                 circleDirect(hdc, points[0].x, points[0].y, R, rgbCurrent);
                 circleWindow = true;
-                CheckMenuItem(hMenubar, CircleWindow, MF_CHECKED);
+                CheckMenuItem(hMenubar, IDM_CIRCLE_CLIPPING, MF_CHECKED);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
             break;
-        case IDM_Cardinal_Spline:
+        case IDM_CARDINAL_SPLINE:
             points.push_back(p);
             break;
         }
@@ -1139,6 +1187,7 @@ HMENU CreateMenus()
     HMENU circleMenu = CreateMenu();
     HMENU curvesMenu = CreateMenu();
     HMENU shapesMenu = CreateMenu();
+    HMENU filledPolygonMenu = CreateMenu();
 
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_SAVE, L"Save");
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"Open");
@@ -1154,14 +1203,17 @@ HMENU CreateMenus()
     AppendMenuW(lineMenu, MF_STRING, IDM_LINE_PARAMETRIC, L"Parmetric");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)lineMenu, L"Line");
 
-    AppendMenuW(fillingMenu, MF_STRING, IDM_Non_Recursive_Fill, L"Non-RecursiveFlood_fill");
-    AppendMenuW(fillingMenu, MF_STRING, IDM_Recursive_Fill, L"Recursive_FloodFill");
-    AppendMenuW(fillingMenu, MF_STRING, IDM_Convex_Filling, L"Convex Filling");
+    AppendMenuW(fillingMenu, MF_STRING, IDM_NON_RECURSIVE_FILL, L"Non-recursive flood fill");
+    AppendMenuW(fillingMenu, MF_STRING, IDM_RECURSIVE_FILL, L"Recursive flood fill");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillingMenu, L"Filling");
 
-    AppendMenuW(clippingMenu, MF_STRING, CircleWindow, L"CircleWindow");
-    AppendMenuW(clippingMenu, MF_STRING, IDM_rectangleClipping, L"RectangleWindow");
-    AppendMenuW(clippingMenu, MF_STRING, IDM_squareClipping, L"SquareWindow");
+    AppendMenuW(filledPolygonMenu, MF_STRING, IDM_NON_CONVEX_FILLING, L"Non-convex Filling");
+    AppendMenuW(filledPolygonMenu, MF_STRING, IDM_CONVEX_FILLING, L"Convex Filling");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)filledPolygonMenu, L"Filling");
+
+    AppendMenuW(clippingMenu, MF_STRING, IDM_CIRCLE_CLIPPING, L"Circle clipping");
+    AppendMenuW(clippingMenu, MF_STRING, IDM_RECTANGLE_CLIPPING, L"Rectangle clipping");
+    AppendMenuW(clippingMenu, MF_STRING, IDM_SQUARE_CLIPPING, L"Square clipping");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)clippingMenu, L"&Clipping");
 
     AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_DIRECT, L"Direct");
@@ -1171,7 +1223,7 @@ HMENU CreateMenus()
     AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MODIFIEDMIDPOINT, L"Modified Midpoint");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)circleMenu, L"Circle");
 
-    AppendMenuW(curvesMenu, MF_STRING, IDM_Cardinal_Spline, L"Cardinal Spline");
+    AppendMenuW(curvesMenu, MF_STRING, IDM_CARDINAL_SPLINE, L"Cardinal Spline");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)curvesMenu, L"Curve");
 
     AppendMenuW(shapesMenu, MF_STRING, IDM_GENERATE_POINT, L"Point");
