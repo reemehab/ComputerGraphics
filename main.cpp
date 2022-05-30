@@ -1,5 +1,3 @@
-#include<cmath>
-#include <list>
 #if defined(UNICODE) && !defined(_UNICODE)
 #define _UNICODE
 #elif defined(_UNICODE) && !defined(UNICODE)
@@ -31,10 +29,11 @@
 #define IDM_CIRCLE_MODIFIEDMIDPOINT 18
 
 #define IDM_GENERATE_POLYGON 19
-#define IDM_Cardinal_Spline   20
+#define IDM_Cardinal_Spline 20
 #define IDM_GENERATE_POINT 21
 
-
+#include <cmath>
+#include <list>
 #include <tchar.h>
 #include <windows.h>
 #include <vector>
@@ -47,11 +46,9 @@ LRESULT CALLBACK WindowProcedure(HWND, UINT, WPARAM, LPARAM);
 
 /*  Declare procedure to add menus  */
 
-
-
 HMENU CreateMenus();
 
-bool HDCToFile(const wchar_t* FilePath, HDC Context, RECT Area, uint16_t BitsPerPixel);
+bool HDCToFile(const wchar_t *FilePath, HDC Context, RECT Area, uint16_t BitsPerPixel);
 
 /*  Make the class name into a global variable  */
 TCHAR szClassName[] = _T("CodeBlocksWindowsApp");
@@ -61,7 +58,7 @@ HMENU hMenubar = CreateMenu();
 HCURSOR cNormal = LoadCursor(NULL, IDC_ARROW);
 HCURSOR cPlus = LoadCursor(NULL, IDC_CROSS);
 
-HCURSOR* currentCursor = NULL;
+HCURSOR *currentCursor = NULL;
 
 CHOOSECOLOR colorChosen;
 COLORREF acrCustClr[16];
@@ -69,7 +66,6 @@ COLORREF rgbCurrent;
 
 OPENFILENAMEW ofn;
 wchar_t szFileName[MAX_PATH] = L"";
-
 
 int WINAPI WinMain(HINSTANCE hThisInstance,
                    HINSTANCE hPrevInstance,
@@ -103,19 +99,19 @@ int WINAPI WinMain(HINSTANCE hThisInstance,
 
     /* The class is registered, let's create the program*/
     hwnd = CreateWindowEx(
-               0,                               /* Extended possibilites for variation */
-               szClassName,                     /* Classname */
-               _T("Computer Graphics Project"), /* Title Text */
-               WS_OVERLAPPEDWINDOW,             /* default window */
-               CW_USEDEFAULT,                   /* Windows decides the position */
-               CW_USEDEFAULT,                   /* where the window ends up on the screen */
-               544,                             /* The programs width */
-               375,                             /* and height in pixels */
-               HWND_DESKTOP,                    /* The window is a child-window to desktop */
-               CreateMenus(),                   /* Menu bar */
-               hThisInstance,                   /* Program Instance handler */
-               NULL                             /* No Window Creation data */
-           );
+        0,                               /* Extended possibilites for variation */
+        szClassName,                     /* Classname */
+        _T("Computer Graphics Project"), /* Title Text */
+        WS_OVERLAPPEDWINDOW,             /* default window */
+        CW_USEDEFAULT,                   /* Windows decides the position */
+        CW_USEDEFAULT,                   /* where the window ends up on the screen */
+        544,                             /* The programs width */
+        375,                             /* and height in pixels */
+        HWND_DESKTOP,                    /* The window is a child-window to desktop */
+        CreateMenus(),                   /* Menu bar */
+        hThisInstance,                   /* Program Instance handler */
+        NULL                             /* No Window Creation data */
+    );
 
     ZeroMemory(&colorChosen, sizeof(colorChosen));
     colorChosen.lStructSize = sizeof(colorChosen);
@@ -158,11 +154,11 @@ struct point
 {
     int x, y;
 };
-void swap(point &p1,point &p2)
+void swap(point &p1, point &p2)
 {
-    point temp=p1;
-    p1=p2;
-    p2=temp;
+    point temp = p1;
+    p1 = p2;
+    p2 = temp;
 }
 
 ///----------------LineAlgorithms--------------------------
@@ -175,7 +171,7 @@ void lineDDA(HDC hdc, point p1, point p2, COLORREF c)
     {
         if (p1.x > p2.x)
         {
-            swap(p1,p2);
+            swap(p1, p2);
         }
         int x = p1.x;
         double y = p1.y;
@@ -192,11 +188,11 @@ void lineDDA(HDC hdc, point p1, point p2, COLORREF c)
     {
         if (p1.y > p2.y)
         {
-            swap(p1,p2);
+            swap(p1, p2);
         }
         double x = p1.x;
         int y = p1.y;
-        double minV = (double) dx / (double) dy;
+        double minV = (double)dx / (double)dy;
         SetPixel(hdc, Round(x), y, c);
         while (y < p2.y)
         {
@@ -207,7 +203,7 @@ void lineDDA(HDC hdc, point p1, point p2, COLORREF c)
     }
 }
 
-void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
+void MidPointLine(HDC hdc, point p1, point p2, COLORREF c)
 {
     cout << " Midpoint Line with X1 = " << p1.x << " Y1 = " << p1.y << " X2 = " << p2.x << " Y2 = " << p2.y << endl;
     int dx = p2.x - p1.x;
@@ -216,7 +212,7 @@ void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
     {
         if (p1.x > p2.x)
         {
-            swap(p1,p2);
+            swap(p1, p2);
             dx = p2.x - p1.x;
             dy = p2.y - p1.y;
         }
@@ -244,7 +240,7 @@ void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
     {
         if (p1.y > p2.y)
         {
-            swap(p1,p2);
+            swap(p1, p2);
             dx = p2.x - p1.x;
             dy = p2.y - p1.y;
         }
@@ -274,7 +270,7 @@ void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
     {
         if (p1.y > p2.y)
         {
-            swap(p1,p2);
+            swap(p1, p2);
             dx = p2.x - p1.x;
             dy = p2.y - p1.y;
         }
@@ -300,18 +296,18 @@ void MidPointLine(HDC hdc,point p1, point p2, COLORREF c)
             SetPixel(hdc, x, y, c);
         }
     }
-    else 
+    else
     {
         if (p1.x > p2.x)
         {
-            swap(p1,p2);
+            swap(p1, p2);
             dx = p2.x - p1.x;
             dy = p2.y - p1.y;
         }
         int x = p1.x, y = p1.y;
-        int d = - dx - 2 * dy;
+        int d = -dx - 2 * dy;
         int d1 = -2 * dy;
-        int d2 = 2 * (- dx - dy);
+        int d2 = 2 * (-dx - dy);
         SetPixel(hdc, x, y, c);
         while (x < p2.x)
         {
@@ -341,69 +337,66 @@ void paremetricLine(HDC hdc, double x1, double y1, double x2, double y2, COLORRE
     }
 }
 ///---------------------------------Flood-Fill-------------------------------------
-void Recursive_FloodFill(HDC hdc,point p, COLORREF currentColor,  COLORREF filledColor)
+void Recursive_FloodFill(HDC hdc, point p, COLORREF currentColor, COLORREF filledColor)
 {
-    COLORREF c= GetPixel(hdc,p.x,p.y);
-    if(c !=currentColor)
+    COLORREF c = GetPixel(hdc, p.x, p.y);
+    if (c != currentColor)
         return;
-    SetPixel(hdc,p.x,p.y,filledColor);
-    Recursive_FloodFill(hdc,{p.x + 1, p.y},currentColor,filledColor);
-    Recursive_FloodFill(hdc,{p.x, p.y + 1},currentColor,filledColor);
-    Recursive_FloodFill(hdc,{p.x - 1, p.y},currentColor,filledColor);
-    Recursive_FloodFill(hdc,{p.x, p.y - 1},currentColor,filledColor);
-
+    SetPixel(hdc, p.x, p.y, filledColor);
+    Recursive_FloodFill(hdc, {p.x + 1, p.y}, currentColor, filledColor);
+    Recursive_FloodFill(hdc, {p.x, p.y + 1}, currentColor, filledColor);
+    Recursive_FloodFill(hdc, {p.x - 1, p.y}, currentColor, filledColor);
+    Recursive_FloodFill(hdc, {p.x, p.y - 1}, currentColor, filledColor);
 }
 
-void non_recursiveFloodFill(HDC hdc,point p,COLORREF filledColor)
+void non_recursiveFloodFill(HDC hdc, point p, COLORREF filledColor)
 {
-    stack <point> s;
+    stack<point> s;
     s.push(p);
     COLORREF c;
-    COLORREF currentColor=GetPixel(hdc,p.x,p.y);
-    while(!s.empty())
+    COLORREF currentColor = GetPixel(hdc, p.x, p.y);
+    while (!s.empty())
     {
-        p= s.top();
+        p = s.top();
         s.pop();
-        c=GetPixel(hdc,p.x,p.y);
-        if(currentColor!=c)
+        c = GetPixel(hdc, p.x, p.y);
+        if (currentColor != c)
             continue;
-        SetPixel(hdc,p.x,p.y,filledColor);
+        SetPixel(hdc, p.x, p.y, filledColor);
         s.push({p.x + 1, p.y});
         s.push({p.x, p.y + 1});
         s.push({p.x - 1, p.y});
         s.push({p.x, p.y - 1});
     }
-
 }
 ///--------------------------------------------circle----------------------------------------
-void Draw8points(HDC hdc,int xc,int yc, int a, int b,COLORREF color)
+void Draw8points(HDC hdc, int xc, int yc, int a, int b, COLORREF color)
 {
 
-    SetPixel(hdc, xc+a, yc+b, color);
-    SetPixel(hdc, xc-a, yc+b, color);
-    SetPixel(hdc, xc-a, yc-b, color);
-    SetPixel(hdc, xc+a, yc-b, color);
-    SetPixel(hdc, xc+b, yc+a, color);
-    SetPixel(hdc, xc-b, yc+a, color);
-    SetPixel(hdc, xc-b, yc-a, color);
-    SetPixel(hdc, xc+b, yc-a, color);
+    SetPixel(hdc, xc + a, yc + b, color);
+    SetPixel(hdc, xc - a, yc + b, color);
+    SetPixel(hdc, xc - a, yc - b, color);
+    SetPixel(hdc, xc + a, yc - b, color);
+    SetPixel(hdc, xc + b, yc + a, color);
+    SetPixel(hdc, xc - b, yc + a, color);
+    SetPixel(hdc, xc - b, yc - a, color);
+    SetPixel(hdc, xc + b, yc - a, color);
 }
 
-void circleDirect(HDC hdc,int xc,int yc,int R,COLORREF color) //Direct
+void circleDirect(HDC hdc, int xc, int yc, int R, COLORREF color) // Direct
 {
-    double dtheta=1.0/R;
-    for(double theta =0; theta<=6.28319; theta+=dtheta)//360 degrees in redians
+    double dtheta = 1.0 / R;
+    for (double theta = 0; theta <= 6.28319; theta += dtheta) // 360 degrees in redians
     {
-        int x= Round ( xc + R * cos(theta) );
-        int y = Round (yc + R * sin (theta));
-        SetPixel( hdc, x,y,color );
+        int x = Round(xc + R * cos(theta));
+        int y = Round(yc + R * sin(theta));
+        SetPixel(hdc, x, y, color);
     }
-
 }
 
-void circleMidPoint(HDC hdc, int xc, int yc, int R, COLORREF color )// midpoint
+void circleMidPoint(HDC hdc, int xc, int yc, int R, COLORREF color) // midpoint
 {
-    int x = 0, y = R,d = 1 - R;
+    int x = 0, y = R, d = 1 - R;
     Draw8points(hdc, xc, yc, x, y, color);
     while (x < y)
     {
@@ -420,7 +413,7 @@ void circleMidPoint(HDC hdc, int xc, int yc, int R, COLORREF color )// midpoint
         Draw8points(hdc, xc, yc, x, y, color);
     }
 }
-void circleMidPointModified(HDC hdc, int xc, int yc, int R, COLORREF color )// modified Midpoint
+void circleMidPointModified(HDC hdc, int xc, int yc, int R, COLORREF color) // modified Midpoint
 {
     int x = 0, y = R;
     int d = 1 - R;
@@ -432,7 +425,6 @@ void circleMidPointModified(HDC hdc, int xc, int yc, int R, COLORREF color )// m
         {
             d += d1;
             d2 += 2;
-
         }
         else
         {
@@ -445,52 +437,52 @@ void circleMidPointModified(HDC hdc, int xc, int yc, int R, COLORREF color )// m
         Draw8points(hdc, xc, yc, x, y, color);
     }
 }
-void circlePolar(HDC hdc,int xc,int yc,int R,COLORREF color) //Polar
+void circlePolar(HDC hdc, int xc, int yc, int R, COLORREF color) // Polar
 {
-    double theta = 0.0, x=R, y=0;
-    Draw8points(hdc,xc,yc,x,y,color);
-    while(x>y)
+    double theta = 0.0, x = R, y = 0;
+    Draw8points(hdc, xc, yc, x, y, color);
+    while (x > y)
     {
-        theta+=1.0/R;
-        x=R*cos(theta);
-        y=R*sin(theta);
-        Draw8points(hdc,xc,yc,Round(x),Round(y),color);
+        theta += 1.0 / R;
+        x = R * cos(theta);
+        y = R * sin(theta);
+        Draw8points(hdc, xc, yc, Round(x), Round(y), color);
     }
 }
 
-void circleIterativePolar(HDC hdc,int xc,int yc,int R,COLORREF color) // Iterative Polar
+void circleIterativePolar(HDC hdc, int xc, int yc, int R, COLORREF color) // Iterative Polar
 {
-    double dtheta = 1.0 / R, x=R, y=0, c=cos(dtheta), s=sin(dtheta);
-    Draw8points(hdc,xc,yc,x,y,color);
-    while(x>y)
+    double dtheta = 1.0 / R, x = R, y = 0, c = cos(dtheta), s = sin(dtheta);
+    Draw8points(hdc, xc, yc, x, y, color);
+    while (x > y)
     {
-        double x1=x*c-y*s;
-        y=x*s+y*c;
-        x=x1;
-        Draw8points(hdc,xc,yc,Round(x),Round(y),color);
+        double x1 = x * c - y * s;
+        y = x * s + y * c;
+        x = x1;
+        Draw8points(hdc, xc, yc, Round(x), Round(y), color);
     }
 }
-double CalcRadius(int Xc, int Yc, int X,int Y  )
+double CalcRadius(int Xc, int Yc, int X, int Y)
 {
-    return sqrt((X-Xc)*(X-Xc)+(Y-Yc)*(Y-Yc));
+    return sqrt((X - Xc) * (X - Xc) + (Y - Yc) * (Y - Yc));
 }
 
 ///----------------------------------------------clipping-------------------------------------
-///point clipping with a rectangular window
-void PointClipping(HDC hdc,point p,int xleft,int ytop,int xright,int ybottom,COLORREF color)
+/// point clipping with a rectangular window
+void PointClipping(HDC hdc, point p, int xleft, int ytop, int xright, int ybottom, COLORREF color)
 {
-    if(p.x>=xleft && p.x<= xright && p.y>=ytop && p.y<=ybottom)
-        SetPixel(hdc,p.x,p.y,color);
+    if (p.x >= xleft && p.x <= xright && p.y >= ytop && p.y <= ybottom)
+        SetPixel(hdc, p.x, p.y, color);
 }
 
-///line clipping with a rectangular window
+/// line clipping with a rectangular window
 
 union OutCode
 {
     unsigned All : 4;
     struct
     {
-        unsigned left : 1,top : 1,right : 1,bottom : 1;
+        unsigned left : 1, top : 1, right : 1, bottom : 1;
     };
 };
 OutCode GetOutCode(point p1, int xleft, int ytop, int xright, int ybottom)
@@ -508,22 +500,22 @@ OutCode GetOutCode(point p1, int xleft, int ytop, int xright, int ybottom)
     return out;
 }
 
-void VIntersect(point p1,point p2, int x, double* xi, double* yi)
+void VIntersect(point p1, point p2, int x, double *xi, double *yi)
 {
     *xi = x;
     *yi = p1.y + (x - p1.x) * (p2.y - p1.y) / (p2.x - p1.x);
 }
-void HIntersect(point p1, point p2, int y, double* xi, double* yi)
+void HIntersect(point p1, point p2, int y, double *xi, double *yi)
 {
     *yi = y;
-    *xi = p1.x + (y - p1.y) * (p2.x - p1.x) / (p2.y -p1.y);
+    *xi = p1.x + (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y);
 }
-void CohenSuth(HDC hdc, point p1, point p2, int xleft, int ytop, int xright, int ybottom,int choice, COLORREF c)
+void CohenSuth(HDC hdc, point p1, point p2, int xleft, int ytop, int xright, int ybottom, int choice, COLORREF c)
 {
     point pStart;
     pStart.x = p1.x;
     pStart.y = p1.y;
-    point pEnd ;
+    point pEnd;
     pEnd.x = p2.x;
     pEnd.y = p2.y;
 
@@ -564,43 +556,39 @@ void CohenSuth(HDC hdc, point p1, point p2, int xleft, int ytop, int xright, int
     }
     if (!out1.All && !out2.All)
     {
-        if(choice==1) ///DDA
-            lineDDA( hdc, pStart, pEnd,  c);
-        else if (choice==2)///parametric line
-            paremetricLine(hdc, Round(pStart.x), Round(pStart.y),Round(pEnd.x), Round(pEnd.y), c);
+        if (choice == 1) /// DDA
+            lineDDA(hdc, pStart, pEnd, c);
+        else if (choice == 2) /// parametric line
+            paremetricLine(hdc, Round(pStart.x), Round(pStart.y), Round(pEnd.x), Round(pEnd.y), c);
 
-        else if (choice==3)///midpoint Line
-            MidPointLine(hdc,pStart,pEnd,c);
+        else if (choice == 3) /// midpoint Line
+            MidPointLine(hdc, pStart, pEnd, c);
     }
 }
 ///------generating polygon--------------
-void generatePolygon(HDC hdc,vector<point> p, COLORREF color)
+void generatePolygon(HDC hdc, vector<point> p, COLORREF color)
 {
-    for(int i=0 ; i< p.size()-1 ; i++)
+    for (int i = 0; i < p.size() - 1; i++)
     {
-        paremetricLine(hdc,p[i].x,p[i].y,p[i+1].x,p[i+1].y,color);
-
+        MidPointLine(hdc, p[i], p[i + 1], color);
     }
-    paremetricLine(hdc,p[0].x,p[0].y,p[p.size()-1].x,p[p.size()-1].y,color);
-
+    MidPointLine(hdc, p[0], p[p.size() - 1], color);
 }
 
-void generatePolygon(HDC hdc,vector<point> p, vector<point> window, COLORREF color)
+void generatePolygon(HDC hdc, vector<point> p, vector<point> window, COLORREF color)
 {
-    for(int i=0 ; i< p.size()-1 ; i++)
+    for (int i = 0; i < p.size() - 1; i++)
     {
-        CohenSuth( hdc, p[i], p[i+1], window[0].x, window[0].y, window[1].x, window[1].y,2,rgbCurrent);
-
+        CohenSuth(hdc, p[i], p[i + 1], window[0].x, window[0].y, window[1].x, window[1].y, 3, rgbCurrent);
     }
-    CohenSuth( hdc,p[0], p[p.size()-1], window[0].x, window[0].y, window[1].x, window[1].y,2,rgbCurrent);
-
+    CohenSuth(hdc, p[0], p[p.size() - 1], window[0].x, window[0].y, window[1].x, window[1].y, 3, rgbCurrent);
 }
 
 void generateRectangle(HDC hdc, point p0, point p1, COLORREF color)
 {
     vector<point> points;
-    point px {p0.x, p1.y};
-    point py {p1.x, p0.y};
+    point px{p0.x, p1.y};
+    point py{p1.x, p0.y};
     points.push_back(p0);
     points.push_back(px);
     points.push_back(p1);
@@ -609,8 +597,7 @@ void generateRectangle(HDC hdc, point p0, point p1, COLORREF color)
     generatePolygon(hdc, points, color);
 }
 
-
-void DrawHermiteCurve(HDC hdc,point& p1, point& T1, point& p2, point& T2,COLORREF color)
+void DrawHermiteCurve(HDC hdc, point &p1, point &T1, point &p2, point &T2, COLORREF color)
 {
 
     double alpha0 = p1.x,
@@ -623,159 +610,168 @@ void DrawHermiteCurve(HDC hdc,point& p1, point& T1, point& p2, point& T2,COLORRE
            beta3 = 2 * p1.y + T1.y - 2 * p2.y + T2.y;
     for (double t = 0; t <= 1; t += 0.001)
     {
-        double t2 = t*t,
-               t3 = t2*t;
-        double x = alpha0 + alpha1*t + alpha2*t2 + alpha3*t3;
-        double y = beta0 + beta1*t + beta2*t2 + beta3*t3;
-
+        double t2 = t * t,
+               t3 = t2 * t;
+        double x = alpha0 + alpha1 * t + alpha2 * t2 + alpha3 * t3;
+        double y = beta0 + beta1 * t + beta2 * t2 + beta3 * t3;
 
         SetPixel(hdc, Round(x), Round(y), color);
     }
 }
 
-void DrawCardinalSpline(HDC hdc,vector<point> p,int n,double c,COLORREF color)
+void DrawCardinalSpline(HDC hdc, vector<point> p, int n, double c, COLORREF color)
 {
-    vector<point>t(n);
-    for(int i=1; i<n-1; i++)
+    vector<point> t(n);
+    for (int i = 1; i < n - 1; i++)
     {
-        t[i].x=(c/2)*(p[i+1].x-p[i-1].x);
-        t[i].y=(c/2)*(p[i+1].y-p[i-1].y);
-
+        t[i].x = (c / 2) * (p[i + 1].x - p[i - 1].x);
+        t[i].y = (c / 2) * (p[i + 1].y - p[i - 1].y);
     }
-    t[0].x=(c/2)*(p[1].x-p[0].x);
-    t[0].y= (c/2)*(p[1].y-p[0].y);
+    t[0].x = (c / 2) * (p[1].x - p[0].x);
+    t[0].y = (c / 2) * (p[1].y - p[0].y);
 
-    t[n-1].x=(c/2)*(p[n-1].x-p[n-2].x);
-    t[n-1].y= (c/2)*(p[n-1].y-p[n-2].y);
-    for(int i=0; i<n-1; i++)
+    t[n - 1].x = (c / 2) * (p[n - 1].x - p[n - 2].x);
+    t[n - 1].y = (c / 2) * (p[n - 1].y - p[n - 2].y);
+    for (int i = 0; i < n - 1; i++)
     {
-        DrawHermiteCurve(hdc,p[i],t[i],p[i+1],t[i+1],color);
+        DrawHermiteCurve(hdc, p[i], t[i], p[i + 1], t[i + 1], color);
     }
 }
 //-----convef fily-----
 struct Entry
 {
-    int xmin,xmax;
+    int xmin, xmax;
 };
 
 void InitEntries(Entry table[])
 {
-    for(int i=0; i < 800; i++)
-        {
-            table[i].xmin =  1e9;
-            table[i].xmax = - 1e9;
-        }
+    for (int i = 0; i < 800; i++)
+    {
+        table[i].xmin = 1e9;
+        table[i].xmax = -1e9;
+    }
 }
-void ScanEdge(POINT v1,POINT v2,Entry table[])
+void ScanEdge(POINT v1, POINT v2, Entry table[])
 {
-    if(v1.y==v2.y)return;
-    if(v1.y>v2.y)swap(v1,v2);
-    double minv=(double)(v2.x-v1.x)/(v2.y-v1.y);
-    double x=v1.x;
-    int y=v1.y;
-    while(y<v2.y){
-            if(x<table[y].xmin)table[y].xmin=(int)ceil(x);
-            if(x>table[y].xmax)table[y].xmax=(int)floor(x);
-            y++;
-            x+=minv;
-            }
+    if (v1.y == v2.y)
+        return;
+    if (v1.y > v2.y)
+        swap(v1, v2);
+    double minv = (double)(v2.x - v1.x) / (v2.y - v1.y);
+    double x = v1.x;
+    int y = v1.y;
+    while (y < v2.y)
+    {
+        if (x < table[y].xmin)
+            table[y].xmin = (int)ceil(x);
+        if (x > table[y].xmax)
+            table[y].xmax = (int)floor(x);
+        y++;
+        x += minv;
+    }
 }
-void DrawSanLines(HDC hdc,Entry table[],COLORREF color)
+void DrawSanLines(HDC hdc, Entry table[], COLORREF color)
 {
-for(int y=0;y<800;y++)
-if(table[y].xmin<table[y].xmax)
-for(int x=table[y].xmin;x<=table[y].xmax;x++)
-SetPixel(hdc,x,y,color);
+    for (int y = 0; y < 800; y++)
+        if (table[y].xmin < table[y].xmax)
+            for (int x = table[y].xmin; x <= table[y].xmax; x++)
+                SetPixel(hdc, x, y, color);
 }
 
-void ConvexFill(HDC hdc,POINT p[],int n,COLORREF color)
+void ConvexFill(HDC hdc, POINT p[], int n, COLORREF color)
 {
-    Entry *table=new Entry[800];
+    Entry *table = new Entry[800];
     InitEntries(table);
-    POINT v1=p[n-1];
-    for(int i=0;i<n;i++){
-            POINT v2=p[i];
-            ScanEdge(v1,v2,table);
-            v1=p[i];
-            }
-    DrawSanLines(hdc,table,color);
+    POINT v1 = p[n - 1];
+    for (int i = 0; i < n; i++)
+    {
+        POINT v2 = p[i];
+        ScanEdge(v1, v2, table);
+        v1 = p[i];
+    }
+    DrawSanLines(hdc, table, color);
     delete table;
 }
 
-
-
-
-// general 
+// general
 struct EdgeRec
 {
-double x;
-double minv;
-int ymax;
-bool operator<(EdgeRec r)
-{
-return x<r.x;
-}
+    double x;
+    double minv;
+    int ymax;
+    bool operator<(EdgeRec r)
+    {
+        return x < r.x;
+    }
 };
 typedef list<EdgeRec> EdgeList;
-EdgeRec InitEdgeRec(POINT& v1,POINT& v2)
+EdgeRec InitEdgeRec(POINT &v1, POINT &v2)
 {
-if(v1.y>v2.y)swap(v1,v2);
-EdgeRec rec;
-rec.x=v1.x;
-rec.ymax=v2.y;
-rec.minv=(double)(v2.x-v1.x)/(v2.y-v1.y);
-return rec;
+    if (v1.y > v2.y)
+        swap(v1, v2);
+    EdgeRec rec;
+    rec.x = v1.x;
+    rec.ymax = v2.y;
+    rec.minv = (double)(v2.x - v1.x) / (v2.y - v1.y);
+    return rec;
 }
-void InitEdgeTable(POINT *polygon,int n,EdgeList table[])
+void InitEdgeTable(POINT *polygon, int n, EdgeList table[])
 {
-POINT v1=polygon[n-1];
-for(int i=0;i<n;i++)
-{
-POINT v2=polygon[i];
-if(v1.y==v2.y){v1=v2;continue;}
-EdgeRec rec=InitEdgeRec(v1, v2);
-table[v1.y].push_back(rec);
-v1=polygon[i];
-}
-}
-
-void GeneralPolygonFill(HDC hdc,POINT *polygon,int n,COLORREF c)
-{
-EdgeList *table=new EdgeList [800];
-InitEdgeTable(polygon,n,table);
-int y=0;
-while(y<800 && table[y].size()==0)y++;
-if(y==800)return;
-EdgeList ActiveList=table[y];
-while (ActiveList.size()>0)
-{
-ActiveList.sort();
-for(EdgeList::iterator it=ActiveList.begin();it!=ActiveList.end();it++)
-{
-int x1=(int)ceil(it->x);
-it++;
-int x2=(int)floor(it->x);
-for(int x=x1;x<=x2;x++)SetPixel(hdc,x,y,c);
-}
-y++;
-EdgeList::iterator it=ActiveList.begin();
-while(it!=ActiveList.end())
-if(y==it->ymax) it=ActiveList.erase(it); else it++;
-for(EdgeList::iterator it=ActiveList.begin();it!=ActiveList.end();it++)
-it->x+=it->minv;
-ActiveList.insert(ActiveList.end(),table[y].begin(),table[y].end());
-}
-delete[] table;
+    POINT v1 = polygon[n - 1];
+    for (int i = 0; i < n; i++)
+    {
+        POINT v2 = polygon[i];
+        if (v1.y == v2.y)
+        {
+            v1 = v2;
+            continue;
+        }
+        EdgeRec rec = InitEdgeRec(v1, v2);
+        table[v1.y].push_back(rec);
+        v1 = polygon[i];
+    }
 }
 
-
-
+void GeneralPolygonFill(HDC hdc, POINT *polygon, int n, COLORREF c)
+{
+    EdgeList *table = new EdgeList[800];
+    InitEdgeTable(polygon, n, table);
+    int y = 0;
+    while (y < 800 && table[y].size() == 0)
+        y++;
+    if (y == 800)
+        return;
+    EdgeList ActiveList = table[y];
+    while (ActiveList.size() > 0)
+    {
+        ActiveList.sort();
+        for (EdgeList::iterator it = ActiveList.begin(); it != ActiveList.end(); it++)
+        {
+            int x1 = (int)ceil(it->x);
+            it++;
+            int x2 = (int)floor(it->x);
+            for (int x = x1; x <= x2; x++)
+                SetPixel(hdc, x, y, c);
+        }
+        y++;
+        EdgeList::iterator it = ActiveList.begin();
+        while (it != ActiveList.end())
+            if (y == it->ymax)
+                it = ActiveList.erase(it);
+            else
+                it++;
+        for (EdgeList::iterator it = ActiveList.begin(); it != ActiveList.end(); it++)
+            it->x += it->minv;
+        ActiveList.insert(ActiveList.end(), table[y].begin(), table[y].end());
+    }
+    delete[] table;
+}
 
 int currentFunction = -1;
 vector<point> points;
-vector<point>window;
-bool rectangleWindow=false;
-bool circleWindow=false;
+vector<point> window;
+bool rectangleWindow = false;
+bool circleWindow = false;
 int R;
 /*  This function is called by the Windows function DispatchMessage()  */
 LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -787,7 +783,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         switch (LOWORD(wParam))
         {
         case IDM_FILE_SAVE:
-            if(GetSaveFileNameW(&ofn))
+            if (GetSaveFileNameW(&ofn))
             {
                 RECT rect;
                 GetClientRect(hwnd, &rect);
@@ -796,12 +792,12 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             }
             break;
         case IDM_FILE_OPEN:
-            if(GetOpenFileNameW(&ofn))
+            if (GetOpenFileNameW(&ofn))
             {
                 RECT rect;
                 GetClientRect(hwnd, &rect);
 
-                HBRUSH brush = CreatePatternBrush((HBITMAP) LoadImageW(NULL, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE));
+                HBRUSH brush = CreatePatternBrush((HBITMAP)LoadImageW(NULL, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE));
                 FillRect(hdc, &rect, brush);
                 DeleteObject(brush);
             }
@@ -814,18 +810,18 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
             break;
         case IDM_EDIT_CLEAR:
-            {
-                RECT rect;
-                GetClientRect(hwnd, &rect);
+        {
+            RECT rect;
+            GetClientRect(hwnd, &rect);
 
-                Rectangle(hdc, -1, -1,rect.right - rect.left + 1, rect.bottom - rect.top + 1);
-            }
-            break;
-            
+            Rectangle(hdc, -1, -1, rect.right - rect.left + 1, rect.bottom - rect.top + 1);
+        }
+        break;
+
         case IDM_rectangleClipping:
             if (rectangleWindow)
             {
-                rectangleWindow=false;
+                rectangleWindow = false;
                 CheckMenuItem(hMenubar, IDM_rectangleClipping, MF_UNCHECKED);
             }
             else
@@ -839,7 +835,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_squareClipping:
             if (rectangleWindow)
             {
-                rectangleWindow=false;
+                rectangleWindow = false;
                 CheckMenuItem(hMenubar, IDM_squareClipping, MF_UNCHECKED);
             }
             else
@@ -853,7 +849,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case CircleWindow:
             if (circleWindow)
             {
-                circleWindow=false;
+                circleWindow = false;
                 CheckMenuItem(hMenubar, CircleWindow, MF_UNCHECKED);
             }
             else
@@ -870,9 +866,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_Recursive_Fill:
         case IDM_Non_Recursive_Fill:
         case IDM_CIRCLE_DIRECT:
-        case IDM_CIRCLE_POLAR :
-        case IDM_CIRCLE_ITERATIVEPOLAR :
-        case IDM_CIRCLE_MIDPOINT :
+        case IDM_CIRCLE_POLAR:
+        case IDM_CIRCLE_ITERATIVEPOLAR:
+        case IDM_CIRCLE_MIDPOINT:
         case IDM_CIRCLE_MODIFIEDMIDPOINT:
         case IDM_GENERATE_POLYGON:
         case IDM_Cardinal_Spline:
@@ -898,35 +894,35 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         switch (currentFunction)
         {
         case IDM_GENERATE_POLYGON:
-            if(!rectangleWindow)
-            {   int x=points.size();
-                  POINT *tmp= new POINT[x];
-                generatePolygon(hdc,points,rgbCurrent);
-                for(int i=0;i<x ; i++){
-                    tmp[i].x=points[i].x;
-                     tmp[i].y=points[i].y;
+            if (!rectangleWindow)
+            {
+                int x = points.size();
+                POINT *tmp = new POINT[x];
+                generatePolygon(hdc, points, rgbCurrent);
+                for (int i = 0; i < x; i++)
+                {
+                    tmp[i].x = points[i].x;
+                    tmp[i].y = points[i].y;
                 }
-              //  ConvexFill(hdc,tmp,points.size(),rgbCurrent);
-            GeneralPolygonFill(hdc,tmp,points.size(), rgbCurrent);
             }
             else
             {
-                generatePolygon(hdc,points,window,rgbCurrent);
-              //  ConvexFill(hdc,points,points.size(),rgbCurrent);
-
+                generatePolygon(hdc, points, window, rgbCurrent);
             }
             currentCursor = NULL;
             currentFunction = -1;
             points.clear();
             break;
         case IDM_Cardinal_Spline:
-            for(int i=0; i<points.size(); i++)
+            for (int i = 0; i < points.size(); i++)
             {
-                cout<<points[i].x<<" "<<points[i].y<<endl;
+                cout << points[i].x << " " << points[i].y << endl;
             }
-            DrawCardinalSpline(hdc,points,points.size(),1,rgbCurrent);
+            DrawCardinalSpline(hdc, points, points.size(), 1, rgbCurrent);
+            currentCursor = NULL;
+            currentFunction = -1;
+            points.clear();
             break;
-
         default:
             break;
         }
@@ -943,9 +939,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             points.push_back(p);
             if (points.size() == 2)
             {
-                if(rectangleWindow)
+                if (rectangleWindow)
                 {
-                    CohenSuth( hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y,1,rgbCurrent);
+                    CohenSuth(hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y, 1, rgbCurrent);
                 }
                 else
                 {
@@ -963,10 +959,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             if (points.size() == 2)
             {
 
-                if(rectangleWindow)
+                if (rectangleWindow)
                 {
-                    CohenSuth( hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y,3,rgbCurrent);
-
+                    CohenSuth(hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y, 3, rgbCurrent);
                 }
                 else
                 {
@@ -982,10 +977,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             points.push_back(p);
             if (points.size() == 2)
             {
-                if(rectangleWindow)
+                if (rectangleWindow)
                 {
-                    CohenSuth( hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y,2,rgbCurrent);
-
+                    CohenSuth(hdc, points[0], points[1], window[0].x, window[0].y, window[1].x, window[1].y, 2, rgbCurrent);
                 }
                 else
                 {
@@ -1002,9 +996,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             break;
         case IDM_GENERATE_POINT:
             points.push_back(p);
-            if(rectangleWindow)
+            if (rectangleWindow)
             {
-                PointClipping(hdc, points[0], window[0].x, window[0].y, window[1].x, window[1].y,rgbCurrent);
+                PointClipping(hdc, points[0], window[0].x, window[0].y, window[1].x, window[1].y, rgbCurrent);
             }
             else
             {
@@ -1016,47 +1010,47 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             break;
         case IDM_CIRCLE_DIRECT:
             points.push_back(p);
-            if(points.size() == 2)
+            if (points.size() == 2)
             {
-                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
-                circleDirect(hdc,points[0].x,points[0].y,R,rgbCurrent);
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleDirect(hdc, points[0].x, points[0].y, R, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
             break;
 
-        case IDM_CIRCLE_POLAR :
+        case IDM_CIRCLE_POLAR:
             points.push_back(p);
-            if(points.size() == 2)
+            if (points.size() == 2)
             {
-                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
-                circlePolar(hdc,points[0].x,points[0].y,R,rgbCurrent);
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circlePolar(hdc, points[0].x, points[0].y, R, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
             break;
 
-        case IDM_CIRCLE_ITERATIVEPOLAR :
+        case IDM_CIRCLE_ITERATIVEPOLAR:
             points.push_back(p);
-            if(points.size() == 2)
+            if (points.size() == 2)
             {
-                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
-                circleIterativePolar(hdc,points[0].x,points[0].y,R,rgbCurrent);
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleIterativePolar(hdc, points[0].x, points[0].y, R, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
             break;
 
-        case IDM_CIRCLE_MIDPOINT :
+        case IDM_CIRCLE_MIDPOINT:
             points.push_back(p);
 
-            if(points.size() == 2)
+            if (points.size() == 2)
             {
-                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
-                circleMidPoint(hdc,points[0].x,points[0].y,R,rgbCurrent);
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleMidPoint(hdc, points[0].x, points[0].y, R, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
@@ -1067,24 +1061,24 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_CIRCLE_MODIFIEDMIDPOINT:
             points.push_back(p);
 
-            if(points.size() == 2)
+            if (points.size() == 2)
             {
-                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
-                circleMidPointModified(hdc,points[0].x,points[0].y,R,rgbCurrent);
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleMidPointModified(hdc, points[0].x, points[0].y, R, rgbCurrent);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
             }
             break;
         case IDM_Recursive_Fill:
-            Recursive_FloodFill(hdc,p,GetPixel(hdc,p.x,p.y),rgbCurrent);
+            Recursive_FloodFill(hdc, p, GetPixel(hdc, p.x, p.y), rgbCurrent);
             currentCursor = NULL;
             currentFunction = -1;
             points.clear();
 
             break;
         case IDM_Non_Recursive_Fill:
-            non_recursiveFloodFill(hdc,p,rgbCurrent);
+            non_recursiveFloodFill(hdc, p, rgbCurrent);
             currentCursor = NULL;
             currentFunction = -1;
             points.clear();
@@ -1096,9 +1090,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             window.push_back(p);
             if (points.size() == 2)
             {
-                generateRectangle(hdc,points[0],points[1], rgbCurrent);
-                rectangleWindow=true;
-                // CheckMenuItem(hMenubar, IDM_rectangleClipping, MF_CHECKED);
+                generateRectangle(hdc, points[0], points[1], rgbCurrent);
+                rectangleWindow = true;
+                CheckMenuItem(hMenubar, IDM_rectangleClipping, MF_CHECKED);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
@@ -1108,9 +1102,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             points.push_back(p);
             if (points.size() == 2)
             {
-                R= CalcRadius(points[0].x,points[0].y,points[1].x,points[1].y);
-                circleDirect(hdc,points[0].x,points[0].y,R,rgbCurrent);
-                circleWindow=true;
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleDirect(hdc, points[0].x, points[0].y, R, rgbCurrent);
+                circleWindow = true;
+                CheckMenuItem(hMenubar, CircleWindow, MF_CHECKED);
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
@@ -1120,7 +1115,6 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             points.push_back(p);
             break;
         }
-
     }
     break;
     case WM_DESTROY:
@@ -1146,25 +1140,24 @@ HMENU CreateMenus()
     HMENU curvesMenu = CreateMenu();
     HMENU shapesMenu = CreateMenu();
 
-
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_SAVE, L"Save");
     AppendMenuW(fileMenu, MF_STRING, IDM_FILE_OPEN, L"Open");
 
     AppendMenuW(editMenu, MF_STRING, IDM_EDIT_CHOOSECOLOR, L"Choose color");
     AppendMenuW(editMenu, MF_STRING, IDM_EDIT_CLEAR, L"Clear");
 
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fileMenu, L"&File");
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)editMenu, L"&Edit");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fileMenu, L"File");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)editMenu, L"Edit");
 
     AppendMenuW(lineMenu, MF_STRING, IDM_LINE_MIDPOINT, L"MidPoint");
     AppendMenuW(lineMenu, MF_STRING, IDM_LINE_DDA, L"DDA");
     AppendMenuW(lineMenu, MF_STRING, IDM_LINE_PARAMETRIC, L"Parmetric");
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)lineMenu, L"&Line");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)lineMenu, L"Line");
 
     AppendMenuW(fillingMenu, MF_STRING, IDM_Non_Recursive_Fill, L"Non-RecursiveFlood_fill");
     AppendMenuW(fillingMenu, MF_STRING, IDM_Recursive_Fill, L"Recursive_FloodFill");
     AppendMenuW(fillingMenu, MF_STRING, IDM_Convex_Filling, L"Convex Filling");
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillingMenu, L"&Filling");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillingMenu, L"Filling");
 
     AppendMenuW(clippingMenu, MF_STRING, CircleWindow, L"CircleWindow");
     AppendMenuW(clippingMenu, MF_STRING, IDM_rectangleClipping, L"RectangleWindow");
@@ -1176,21 +1169,19 @@ HMENU CreateMenus()
     AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_ITERATIVEPOLAR, L"Iterative Polar");
     AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MIDPOINT, L"Midpoint");
     AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_MODIFIEDMIDPOINT, L"Modified Midpoint");
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)circleMenu, L"&Circle");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)circleMenu, L"Circle");
 
     AppendMenuW(curvesMenu, MF_STRING, IDM_Cardinal_Spline, L"Cardinal Spline");
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)curvesMenu, L"&Curve");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)curvesMenu, L"Curve");
 
-    AppendMenuW(shapesMenu, MF_STRING, IDM_GENERATE_POINT,L"point");
+    AppendMenuW(shapesMenu, MF_STRING, IDM_GENERATE_POINT, L"Point");
     AppendMenuW(shapesMenu, MF_STRING, IDM_GENERATE_POLYGON, L"Polygon");
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)shapesMenu, L"&shapes");
-
-
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)shapesMenu, L"Shapes");
 
     return hMenubar;
 }
 
-bool HDCToFile(const wchar_t* FilePath, HDC Context, RECT Area, uint16_t BitsPerPixel = 24)
+bool HDCToFile(const wchar_t *FilePath, HDC Context, RECT Area, uint16_t BitsPerPixel = 24)
 {
     uint32_t Width = Area.right - Area.left;
     uint32_t Height = Area.bottom - Area.top;
@@ -1209,10 +1200,9 @@ bool HDCToFile(const wchar_t* FilePath, HDC Context, RECT Area, uint16_t BitsPer
     Header.bfType = 0x4D42;
     Header.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
 
-
-    char* Pixels = NULL;
+    char *Pixels = NULL;
     HDC MemDC = CreateCompatibleDC(Context);
-    HBITMAP Section = CreateDIBSection(Context, &Info, DIB_RGB_COLORS, (void**)&Pixels, 0, 0);
+    HBITMAP Section = CreateDIBSection(Context, &Info, DIB_RGB_COLORS, (void **)&Pixels, 0, 0);
     DeleteObject(SelectObject(MemDC, Section));
     BitBlt(MemDC, 0, 0, Width, Height, Context, Area.left, Area.top, SRCCOPY);
     DeleteDC(MemDC);
@@ -1220,8 +1210,8 @@ bool HDCToFile(const wchar_t* FilePath, HDC Context, RECT Area, uint16_t BitsPer
     std::fstream hFile(FilePath, std::ios::out | std::ios::binary);
     if (hFile.is_open())
     {
-        hFile.write((char*)&Header, sizeof(Header));
-        hFile.write((char*)&Info.bmiHeader, sizeof(Info.bmiHeader));
+        hFile.write((char *)&Header, sizeof(Header));
+        hFile.write((char *)&Info.bmiHeader, sizeof(Info.bmiHeader));
         hFile.write(Pixels, (((BitsPerPixel * Width + 31) & ~31) / 8) * Height);
         hFile.close();
         DeleteObject(Section);
