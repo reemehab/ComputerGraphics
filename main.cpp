@@ -564,7 +564,7 @@ double CalcRadius(int Xc, int Yc, int X, int Y)
     return sqrt((X - Xc) * (X - Xc) + (Y - Yc) * (Y - Yc));
 }
 
-///----------------------------------------------Fill Quarter Circle-------------------------------------
+///----------------------------------------------Fill Quarter Circle with Lines-------------------------------------
 void Draw8PointsQuarter1Line(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
 {
     SetPixel(hdc,xc+x,yc+y,color);
@@ -649,6 +649,43 @@ void circleIterativePolarLines(HDC hdc, int xc, int yc, int R,int quarter ,COLOR
 
     }
 }
+///----------------------------------------------Fill Quarter Circle with circles-------------------------------------
+void Draw8pointsCircles(HDC hdc, int xc, int yc, int a, int b,int quad,COLORREF color)
+{
+
+    if(quad==1){
+    SetPixel(hdc, xc + a, yc - b, color);
+    SetPixel(hdc, xc + b, yc - a, color);
+    }
+    else if(quad==2){
+    SetPixel(hdc, xc - b, yc - a, color);
+    SetPixel(hdc, xc - a, yc - b, color);
+    }
+    else if(quad==3){
+    SetPixel(hdc, xc - a, yc + b, color);
+    SetPixel(hdc, xc - b, yc + a, color);
+    }
+    else{
+    SetPixel(hdc, xc + a, yc + b, color);
+    SetPixel(hdc, xc + b, yc + a, color);
+    }
+}
+void circleIterativePolarCircles(HDC hdc, int xc, int yc, int R, int quad,COLORREF color) // Iterative Polar
+{
+    double dtheta = 1.0 / R, x = R, y = 0, c = cos(dtheta), s = sin(dtheta);
+    Draw8points(hdc, xc, yc, x, y, color);
+    while (x > y)
+    {
+        double x1 = x * c - y * s;
+        y = x * s + y * c;
+        x = x1;
+        Draw8pointsCircles(hdc, xc, yc, Round(x), Round(y), quad,color);
+
+    }
+}
+
+
+
 
 ///----------------------------------------------clipping-------------------------------------
 /// point clipping with a rectangular window
@@ -1371,6 +1408,62 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             {
                 R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
                 circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 4,rgbCurrent);
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_FILLQUARTERCIRCLE_FIRST:
+            points.push_back(p);
+            if (points.size() == 2)
+            {
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleIterativePolar(hdc, points[0].x, points[0].y, R,rgbCurrent);
+                for(int i=0;i<=R;i++){
+                circleIterativePolarCircles(hdc,points[0].x,points[0].y,i,1,rgbCurrent);
+                }
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_FILLQUARTERCIRCLE_SECOND:
+            points.push_back(p);
+            if (points.size() == 2)
+            {
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleIterativePolar(hdc, points[0].x, points[0].y, R,rgbCurrent);
+                for(int i=0;i<=R;i++){
+                circleIterativePolarCircles(hdc,points[0].x,points[0].y,i,2,rgbCurrent);
+                }
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_FILLQUARTERCIRCLE_THIRD:
+            points.push_back(p);
+            if (points.size() == 2)
+            {
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleIterativePolar(hdc, points[0].x, points[0].y, R,rgbCurrent);
+                for(int i=0;i<=R;i++){
+                circleIterativePolarCircles(hdc,points[0].x,points[0].y,i,3,rgbCurrent);
+                }
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_FILLQUARTERCIRCLE_FOURTH:
+            points.push_back(p);
+            if (points.size() == 2)
+            {
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleIterativePolar(hdc, points[0].x, points[0].y, R,rgbCurrent);
+                for(int i=0;i<=R;i++){
+                circleIterativePolarCircles(hdc,points[0].x,points[0].y,i,4,rgbCurrent);
+                }
                 currentCursor = NULL;
                 currentFunction = -1;
                 points.clear();
