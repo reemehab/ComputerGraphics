@@ -673,7 +673,6 @@ void Draw8pointsCircles(HDC hdc, int xc, int yc, int a, int b,int quad,COLORREF 
 void circleIterativePolarCircles(HDC hdc, int xc, int yc, int R, int quad,COLORREF color) // Iterative Polar
 {
     double dtheta = 1.0 / R, x = R, y = 0, c = cos(dtheta), s = sin(dtheta);
-    Draw8points(hdc, xc, yc, x, y, color);
     while (x > y)
     {
         double x1 = x * c - y * s;
