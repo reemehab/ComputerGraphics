@@ -40,6 +40,16 @@
 #define IDM_ELLIPSE_POLAR 24
 #define IDM_ELLIPSE_MIDPOINT 25
 
+#define IDM_FILLQUARTERLINE_FIRST 26
+#define IDM_FILLQUARTERLINE_SECOND 27
+#define IDM_FILLQUARTERLINE_THIRD 28
+#define IDM_FILLQUARTERLINE_FOURTH 29
+
+#define IDM_FILLQUARTERCIRCLE_FIRST 30
+#define IDM_FILLQUARTERCIRCLE_SECOND 31
+#define IDM_FILLQUARTERCIRCLE_THIRD 32
+#define IDM_FILLQUARTERCIRCLE_FOURTH 33
+
 #include <cmath>
 #include <list>
 #include <tchar.h>
@@ -554,6 +564,92 @@ double CalcRadius(int Xc, int Yc, int X, int Y)
     return sqrt((X - Xc) * (X - Xc) + (Y - Yc) * (Y - Yc));
 }
 
+///----------------------------------------------Fill Quarter Circle-------------------------------------
+void Draw8PointsQuarter1Line(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
+{
+    SetPixel(hdc,xc+x,yc+y,color);
+    SetPixel(hdc,xc-x,yc+y,color);
+    SetPixel(hdc,xc-x,yc-y,color);
+    SetPixel(hdc,xc+x,yc-y,color);
+    paremetricLine(hdc,xc,yc,xc+x,yc-y,color);
+    SetPixel(hdc,xc+y,yc+x,color);
+    SetPixel(hdc,xc-y,yc+x,color);
+    SetPixel(hdc,xc-y,yc-x,color);
+    SetPixel(hdc,xc+y,yc-x,color);
+    paremetricLine(hdc,xc,yc,xc+y,yc-x,color);
+
+
+}
+void Draw8PointsQuarter2Line(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
+{
+    SetPixel(hdc,xc+x,yc+y,color);
+    SetPixel(hdc,xc-x,yc+y,color);
+    SetPixel(hdc,xc-x,yc-y,color);
+    paremetricLine(hdc,xc,yc,xc-x,yc-y,color);
+    SetPixel(hdc,xc+x,yc-y,color);
+    SetPixel(hdc,xc+y,yc+x,color);
+    SetPixel(hdc,xc-y,yc+x,color);
+    SetPixel(hdc,xc-y,yc-x,color);
+    paremetricLine(hdc,xc,yc,xc-y,yc-x,color);
+    SetPixel(hdc,xc+y,yc-x,color);
+
+
+}
+void Draw8PointsQuarter3Line(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
+{
+    SetPixel(hdc,xc+x,yc+y,color);
+    SetPixel(hdc,xc-x,yc+y,color);
+    paremetricLine(hdc,xc,yc,xc-x,yc+y,color);
+    SetPixel(hdc,xc-x,yc-y,color);
+    SetPixel(hdc,xc+x,yc-y,color);
+    SetPixel(hdc,xc+y,yc+x,color);
+    SetPixel(hdc,xc-y,yc+x,color);
+    paremetricLine(hdc,xc,yc,xc-y,yc+x,color);
+    SetPixel(hdc,xc-y,yc-x,color);
+    SetPixel(hdc,xc+y,yc-x,color);
+
+
+}
+void Draw8PointsQuarter4Line(HDC hdc,int xc,int yc,int x,int y,COLORREF color)
+{
+    SetPixel(hdc,xc+x,yc+y,color);
+    paremetricLine(hdc,xc,yc,xc+x,yc+y,color);
+    SetPixel(hdc,xc-x,yc+y,color);
+    SetPixel(hdc,xc-x,yc-y,color);
+    SetPixel(hdc,xc+x,yc-y,color);
+    SetPixel(hdc,xc+y,yc+x,color);
+    paremetricLine(hdc,xc,yc,xc+y,yc+x,color);
+    SetPixel(hdc,xc-y,yc+x,color);
+    SetPixel(hdc,xc-y,yc-x,color);
+    SetPixel(hdc,xc+y,yc-x,color);
+
+
+}
+
+void circleIterativePolarLines(HDC hdc, int xc, int yc, int R,int quarter ,COLORREF color) // Iterative Polar
+{
+    double dtheta = 1.0 / R, x = R, y = 0, c = cos(dtheta), s = sin(dtheta);
+    while (x > y)
+    {
+        double x1 = x * c - y * s;
+        y = x * s + y * c;
+        x = x1;
+        if(quarter==1){
+            Draw8PointsQuarter1Line(hdc, xc, yc, Round(x), Round(y), color);
+        }
+        else if (quarter==2){
+             Draw8PointsQuarter2Line(hdc, xc, yc, Round(x), Round(y), color);
+        }
+        else if (quarter==3){
+            Draw8PointsQuarter3Line(hdc, xc, yc, Round(x), Round(y), color);
+        }
+        else{
+            Draw8PointsQuarter4Line(hdc, xc, yc, Round(x), Round(y), color);
+        }
+
+    }
+}
+
 ///----------------------------------------------clipping-------------------------------------
 /// point clipping with a rectangular window
 void PointClipping(HDC hdc, point p, int xleft, int ytop, int xright, int ybottom, COLORREF color)
@@ -983,6 +1079,14 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_CARDINAL_SPLINE:
         case IDM_GENERATE_POINT:
         case IDM_CONVEX_FILLING:
+        case IDM_FILLQUARTERLINE_FIRST:
+        case IDM_FILLQUARTERLINE_SECOND:
+        case IDM_FILLQUARTERLINE_THIRD:
+        case IDM_FILLQUARTERLINE_FOURTH:
+        case IDM_FILLQUARTERCIRCLE_FIRST:
+        case IDM_FILLQUARTERCIRCLE_SECOND:
+        case IDM_FILLQUARTERCIRCLE_THIRD:
+        case IDM_FILLQUARTERCIRCLE_FOURTH:
         case IDM_NON_CONVEX_FILLING:
             currentFunction = LOWORD(wParam);
             points.clear();
@@ -1228,7 +1332,50 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
                 points.clear();
             }
             break;
-
+        case IDM_FILLQUARTERLINE_FIRST:
+            points.push_back(p);
+            if (points.size() == 2)
+            {
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 1,rgbCurrent);
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_FILLQUARTERLINE_SECOND:
+            points.push_back(p);
+            if (points.size() == 2)
+            {
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 2,rgbCurrent);
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_FILLQUARTERLINE_THIRD:
+            points.push_back(p);
+            if (points.size() == 2)
+            {
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 3,rgbCurrent);
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
+        case IDM_FILLQUARTERLINE_FOURTH:
+            points.push_back(p);
+            if (points.size() == 2)
+            {
+                R = CalcRadius(points[0].x, points[0].y, points[1].x, points[1].y);
+                circleIterativePolarLines(hdc, points[0].x, points[0].y, R, 4,rgbCurrent);
+                currentCursor = NULL;
+                currentFunction = -1;
+                points.clear();
+            }
+            break;
         case IDM_RECURSIVE_FILL:
             Recursive_FloodFill(hdc, p, GetPixel(hdc, p.x, p.y), rgbCurrent);
             currentCursor = NULL;
@@ -1315,6 +1462,8 @@ HMENU CreateMenus()
     HMENU fillingMenu = CreateMenu();
     HMENU clippingMenu = CreateMenu();
     HMENU circleMenu = CreateMenu();
+    HMENU fillQuarterLine = CreateMenu();
+    HMENU fillQuarterCircle = CreateMenu();
     HMENU ellipseMenu = CreateMenu();
     HMENU curvesMenu = CreateMenu();
     HMENU shapesMenu = CreateMenu();
@@ -1355,6 +1504,11 @@ HMENU CreateMenus()
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)circleMenu, L"Circle");
 
 
+    AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_DIRECT, L"Direct");
+    AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_MIDPOINT, L"Midpoint");
+    AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_POLAR, L"Polar");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)ellipseMenu, L"Ellipse");
+
     AppendMenuW(curvesMenu, MF_STRING, IDM_CARDINAL_SPLINE, L"Cardinal Spline");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)curvesMenu, L"Curve");
 
@@ -1362,10 +1516,17 @@ HMENU CreateMenus()
     AppendMenuW(shapesMenu, MF_STRING, IDM_GENERATE_POLYGON, L"Polygon");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)shapesMenu, L"Shapes");
 
-    AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_DIRECT, L"Direct");
-    AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_MIDPOINT, L"Midpoint");
-    AppendMenuW(ellipseMenu, MF_STRING, IDM_ELLIPSE_POLAR, L"Polar");
-    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)ellipseMenu, L"Ellipse");
+    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_FIRST, L"First");
+    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_SECOND, L"Second");
+    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_THIRD, L"Third");
+    AppendMenuW(fillQuarterLine, MF_STRING, IDM_FILLQUARTERLINE_FOURTH, L"Fourth");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillQuarterLine, L"FillQuarterLines");
+
+    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_FIRST, L"First");
+    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_SECOND, L"Second");
+    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_THIRD, L"Third");
+    AppendMenuW(fillQuarterCircle, MF_STRING, IDM_FILLQUARTERCIRCLE_FOURTH, L"Fourth");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillQuarterCircle, L"FillQuarterCircles");
     return hMenubar;
 }
 
