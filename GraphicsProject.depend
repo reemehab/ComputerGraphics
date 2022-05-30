@@ -1,10 +1,20 @@
 # depslib dependency file v1.0
+<<<<<<< Updated upstream
 1653854374 source:d:\level3\cg\assigments\project\project\computergraphics\main.cpp
 	<cmath>
+=======
+1653946136 source:d:\level3\cg\assigments\project\project\computergraphics\main.cpp
+	<cmath>
+	<list>
+>>>>>>> Stashed changes
 	<tchar.h>
 	<windows.h>
 	<vector>
 	<iostream>
+<<<<<<< Updated upstream
+=======
+	<fstream>
+>>>>>>> Stashed changes
 	<stack>
 
 1653664846 source:d:\semster 6\computer graphics\project\computergraphics\main.cpp

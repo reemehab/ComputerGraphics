@@ -34,6 +34,13 @@
 #define IDM_Cardinal_Spline   20
 #define IDM_GENERATE_POINT 21
 
+<<<<<<< Updated upstream
+=======
+#define IDM_GENERATE_POLYGON 20
+#define IDM_CARDINAL_SPLINE 21
+#define IDM_Bezier_Curve 23
+#define IDM_GENERATE_POINT 22
+>>>>>>> Stashed changes
 
 #include <tchar.h>
 #include <windows.h>
@@ -548,9 +555,14 @@ void generateRectangle(HDC hdc, point p0, point p1, COLORREF color)
 
     generatePolygon(hdc, points, color);
 }
+<<<<<<< Updated upstream
 
 
 void DrawHermiteCurve(HDC hdc,point& p1, point& T1, point& p2, point& T2,COLORREF color)
+=======
+///-----------------curves
+void DrawHermiteCurve(HDC hdc, point &p1, point &T1, point &p2, point &T2, COLORREF color)
+>>>>>>> Stashed changes
 {
 
     double alpha0 = p1.x,
@@ -592,6 +604,22 @@ void DrawCardinalSpline(HDC hdc,vector<point> p,int n,double c,COLORREF color)
         DrawHermiteCurve(hdc,p[i],t[i],p[i+1],t[i+1],color);
     }
 }
+<<<<<<< Updated upstream
+=======
+
+void DrawBezierCurve(HDC hdc,point P0,point  P1,point  P2,point  P3,COLORREF color)
+{
+    point T0;
+    T0.x=(3*(P1.x-P0.x));
+    T0.y=(3*(P1.y-P0.y));
+    point T1;
+    T1.x=(3*(P3.x-P2.x));
+    T1.y=(3*(P3.y-P2.y));
+    DrawHermiteCurve(hdc,P0,T0,P3,T1,color);
+}
+
+///-----convex filing-----
+>>>>>>> Stashed changes
 struct Entry
 {
     int xleft,xright;
@@ -655,7 +683,136 @@ void ConvexFill(HDC hdc,vector<point> p,int n,COLORREF color)
     delete table;
 }
 
+<<<<<<< Updated upstream
+=======
+///--general-Polygon-Filling
+struct EdgeRec
+{
+    double x;
+    double minv;
+    int ymax;
+    bool operator<(EdgeRec r)
+    {
+        return x < r.x;
+    }
+};
+typedef list<EdgeRec> EdgeList;
+EdgeRec InitEdgeRec(point &v1, point &v2)
+{
+    if (v1.y > v2.y)
+        swap(v1, v2);
+    EdgeRec rec;
+    rec.x = v1.x;
+    rec.ymax = v2.y;
+    rec.minv = (double)(v2.x - v1.x) / (v2.y - v1.y);
+    return rec;
+}
+void InitEdgeTable(vector<point> polygon, EdgeList table[])
+{
+    point v1 = polygon[polygon.size() - 1];
+    for (int i = 0; i < polygon.size(); i++)
+    {
+        point v2 = polygon[i];
+        if (v1.y == v2.y)
+        {
+            v1 = v2;
+            continue;
+        }
+        EdgeRec rec = InitEdgeRec(v1, v2);
+        table[v1.y].push_back(rec);
+        v1 = polygon[i];
+    }
+}
+>>>>>>> Stashed changes
 
+
+///------------polygon clipping
+struct Vertex
+{
+    double x,y;
+    Vertex(int x1=0,int y1=0)
+    {
+        x=x1;
+        y=y1;
+    }
+};
+typedef vector<Vertex> VertexList;
+typedef bool (*IsInFunc)(Vertex& v,int edge);
+typedef Vertex (*IntersectFunc)(Vertex& v1,Vertex& v2,int edge);
+
+VertexList ClipWithEdge(VertexList p,int edge,IsInFunc In,IntersectFunc Intersect)
+{
+    VertexList OutList;
+    Vertex v1=p[p.size()-1];
+    bool v1_in=In(v1,edge);
+    for(int i=0; i<(int)p.size(); i++)
+    {
+        Vertex v2=p[i];
+        bool v2_in=In(v2,edge);
+        if(!v1_in && v2_in)
+        {
+            OutList.push_back(Intersect(v1,v2,edge));
+            OutList.push_back(v2);
+        }
+        else if(v1_in && v2_in)
+            OutList.push_back(v2);
+        else if(v1_in)
+            OutList.push_back(Intersect(v1,v2,edge));
+        v1=v2;
+        v1_in=v2_in;
+    }
+    return OutList;
+}
+
+bool InLeft(Vertex& v,int edge)
+{
+    return v.x>=edge;
+}
+bool InRight(Vertex& v,int edge)
+{
+    return v.x<=edge;
+}
+bool InTop(Vertex& v,int edge)
+{
+    return v.y>=edge;
+}
+bool InBottom(Vertex& v,int edge)
+{
+    return v.y<=edge;
+}
+Vertex VIntersect(Vertex& v1,Vertex& v2,int xedge)
+{
+    Vertex res;
+    res.x=xedge;
+    res.y=v1.y+(xedge-v1.x)*(v2.y-v1.y)/(v2.x-v1.x);
+    return res;
+}
+
+Vertex HIntersect(Vertex& v1,Vertex& v2,int yedge)
+{
+    Vertex res;
+    res.y=yedge;
+    res.x=v1.x+(yedge-v1.y)*(v2.x-v1.x)/(v2.y-v1.y);
+    return res;
+}
+void PolygonClip(HDC hdc,POINT *p,int n,int xleft,int ytop,int xright,int ybottom)
+{
+    VertexList vlist;
+    for(int i=0; i<n; i++)
+        vlist.push_back(Vertex(p[i].x,p[i].y));
+    vlist=ClipWithEdge(vlist,xleft,InLeft,VIntersect);
+    vlist=ClipWithEdge(vlist,ytop,InTop,HIntersect);
+    vlist=ClipWithEdge(vlist,xright,InRight,VIntersect);
+    vlist=ClipWithEdge(vlist,ybottom,InBottom,HIntersect);
+    Vertex v1=vlist[vlist.size()-1];
+    for(int i=0; i<(int)vlist.size(); i++)
+    {
+        Vertex v2=vlist[i];
+        MoveToEx(hdc,Round(v1.x),Round(v1.y),NULL);
+        LineTo(hdc,Round(v2.x),Round(v2.y));
+        v1=v2;
+    }
+}
 
 int currentFunction = -1;
 vector<point> points;
@@ -663,6 +820,7 @@ vector<point>window;
 bool rectangleWindow=false;
 bool circleWindow=false;
 int R;
+bool fillingSquare=false;
 /*  This function is called by the Windows function DispatchMessage()  */
 LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -672,6 +830,29 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
+<<<<<<< Updated upstream
+=======
+        /*      case IDM_FILE_SAVE:
+                  if (GetSaveFileNameW(&ofn))
+                  {
+                      RECT rect;
+                      GetClientRect(hwnd, &rect);
+
+                      HDCToFile(szFileName, hdc, {0, 0, rect.right - rect.left, rect.bottom - rect.top}, 24);
+                  }
+                  break;
+              case IDM_FILE_OPEN:
+                  if (GetOpenFileNameW(&ofn))
+                  {
+                      RECT rect;
+                      GetClientRect(hwnd, &rect);
+
+                      HBRUSH brush = CreatePatternBrush((HBITMAP)LoadImageW(NULL, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE));
+                      FillRect(hdc, &rect, brush);
+                      DeleteObject(brush);
+                  }
+                  break;*/
+>>>>>>> Stashed changes
         case IDM_EDIT_CHOOSECOLOR:
             if (ChooseColor(&colorChosen) == TRUE)
             {
@@ -743,7 +924,13 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_GENERATE_POLYGON:
         case IDM_Cardinal_Spline:
         case IDM_GENERATE_POINT:
+<<<<<<< Updated upstream
         case IDM_Convex_Filling:
+=======
+        case IDM_CONVEX_FILLING:
+        case IDM_NON_CONVEX_FILLING:
+        case IDM_Bezier_Curve:
+>>>>>>> Stashed changes
             currentFunction = LOWORD(wParam);
             points.clear();
             currentCursor = &cPlus;
@@ -793,7 +980,6 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         int x = (int)LOWORD(lParam);
         int y = (int)HIWORD(lParam);
         point p = {x, y};
-
         switch (currentFunction)
         {
         case IDM_LINE_DDA:
@@ -946,7 +1132,34 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
             currentFunction = -1;
             points.clear();
             break;
+<<<<<<< Updated upstream
         case IDM_Convex_Filling:
+=======
+        case IDM_SQUARE_CLIPPING:
+            window.push_back(p);
+            if (window.size() == 2)
+            {
+                int edge;
+                if (abs(window[0].x - window[1].x) > abs(window[0].y - window[1].y))
+                {
+
+                    edge = window[1].y - window[0].y;
+                }
+                else
+                {
+                    edge = window[1].x - window[0].x;
+                }
+                window[1] = {window[0].x + edge, window[0].y + edge};
+                generateRectangle(hdc, window[0], window[1], rgbCurrent);
+                rectangleWindow = true;
+                CheckMenuItem(hMenubar, IDM_SQUARE_CLIPPING, MF_CHECKED);
+                currentCursor = NULL;
+                currentFunction = -1;
+
+                points.clear();
+            }
+
+>>>>>>> Stashed changes
             break;
         case IDM_rectangleClipping:
             points.push_back(p);
@@ -976,6 +1189,69 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         case IDM_Cardinal_Spline:
             points.push_back(p);
             break;
+        case IDM_Bezier_Curve:
+
+
+            points.push_back(p);
+
+            if(points.size()==2)
+            {
+                generateRectangle(hdc,points[0],points[1],rgbCurrent);
+                point p1;
+                if(points[1].x<points[0].x){
+                    swap(points[0],points[1]);
+
+                }
+                p1.x=points[0].x;
+                p1.y=points[0].y;
+                point p2;
+                p2.x=points[1].x;
+                p2.y=points[0].y;
+                point p3;
+                p3.x=points[1].x;
+                p3.y=points[1].y;
+                point p4;
+                p4.y=points[1].y;
+                p4.x=points[0].x;
+                point tmp1;
+                point tmp2;
+                tmp1.x=p1.x+10;
+                tmp1.y=p1.y-10;
+                tmp2.x= p2.x-10;
+                tmp2.y=p2.y-10;
+
+                point tmp3;
+                point tmp4;
+                tmp3.x=p4.x+10;
+                tmp3.y=p4.y+10;
+                tmp4.x=p3.x-10;
+                tmp4.y=p3.y+10;
+
+                cout<<p1.x<<"     "<<p1.y<<endl;
+                cout<<p2.x<<"     "<<p2.y<<endl;
+                cout<<p3.x<<"     "<<p3.y<<endl;
+                cout<<p4.x<<"     "<<p4.y<<endl;
+                cout<<tmp1.x<<"     "<<tmp1.y<<endl;
+                cout<<tmp2.x<<"     "<<tmp2.y<<endl;
+
+                for(;tmp2.y>tmp3.y; )
+                {
+                    cout<<"hi";
+                    DrawBezierCurve(hdc,p1,tmp1,tmp2,p2,rgbCurrent);
+                    DrawBezierCurve(hdc,p4,tmp3,tmp4,p3,rgbCurrent);
+                    tmp1.y-=0.1;
+                    tmp2.y-=0.1;
+                    tmp3.y+=0.1;
+                    tmp4.y+=0.1;
+                    p1.y-=0.1;
+                    p2.y-=0.1;
+                    p3.y+=0.1;
+                    p4.y+=0.1;
+                }
+            }
+            break;
+
+
         }
 
     }
@@ -1023,9 +1299,20 @@ HMENU CreateMenus()
     AppendMenuW(fillingMenu, MF_STRING, IDM_Convex_Filling, L"Convex Filling");
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)fillingMenu, L"&Filling");
 
+<<<<<<< Updated upstream
     AppendMenuW(clippingMenu, MF_STRING, CircleWindow, L"CircleWindow");
     AppendMenuW(clippingMenu, MF_STRING, IDM_rectangleClipping, L"RectangleWindow");
     AppendMenuW(clippingMenu, MF_STRING, IDM_squareClipping, L"SquareWindow");
+=======
+    AppendMenuW(filledPolygonMenu, MF_STRING, IDM_NON_CONVEX_FILLING, L"Non-convex Filling");
+    AppendMenuW(filledPolygonMenu, MF_STRING, IDM_CONVEX_FILLING, L"Convex Filling");
+    AppendMenuW(filledPolygonMenu, MF_STRING, IDM_Bezier_Curve, L"Bezier Curve");
+    AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)filledPolygonMenu, L"Filling");
+
+    AppendMenuW(clippingMenu, MF_STRING, IDM_CIRCLE_CLIPPING, L"Circle clipping");
+    AppendMenuW(clippingMenu, MF_STRING, IDM_RECTANGLE_CLIPPING, L"Rectangle clipping");
+    AppendMenuW(clippingMenu, MF_STRING, IDM_SQUARE_CLIPPING, L"Square clipping");
+>>>>>>> Stashed changes
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)clippingMenu, L"&Clipping");
 
     AppendMenuW(circleMenu, MF_STRING, IDM_CIRCLE_DIRECT, L"Direct");
@@ -1043,6 +1330,48 @@ HMENU CreateMenus()
     AppendMenuW(hMenubar, MF_POPUP, (UINT_PTR)shapesMenu, L"&shapes");
 
 
+<<<<<<< Updated upstream
 
     return hMenubar;
+=======
+bool HDCToFile(const wchar_t *FilePath, HDC Context, RECT Area, uint16_t BitsPerPixel = 24)
+{
+    uint32_t Width = Area.right - Area.left;
+    uint32_t Height = Area.bottom - Area.top;
+
+    BITMAPINFO Info;
+    BITMAPFILEHEADER Header;
+    memset(&Info, 0, sizeof(Info));
+    memset(&Header, 0, sizeof(Header));
+    Info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    Info.bmiHeader.biWidth = Width;
+    Info.bmiHeader.biHeight = Height;
+    Info.bmiHeader.biPlanes = 1;
+    Info.bmiHeader.biBitCount = BitsPerPixel;
+    Info.bmiHeader.biCompression = BI_RGB;
+    Info.bmiHeader.biSizeImage = Width * Height * (BitsPerPixel > 24 ? 4 : 3);
+    Header.bfType = 0x4D42;
+    Header.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+    char *Pixels = NULL;
+    HDC MemDC = CreateCompatibleDC(Context);
+    HBITMAP Section = CreateDIBSection(Context, &Info, DIB_RGB_COLORS, (void **)&Pixels, 0, 0);
+    DeleteObject(SelectObject(MemDC, Section));
+    BitBlt(MemDC, 0, 0, Width, Height, Context, Area.left, Area.top, SRCCOPY);
+    DeleteDC(MemDC);
+
+    /*    std::fstream hFile(FilePath, std::ios::out | std::ios::binary);
+        if (hFile.is_open())
+        {
+            hFile.write((char *)&Header, sizeof(Header));
+            hFile.write((char *)&Info.bmiHeader, sizeof(Info.bmiHeader));
+            hFile.write(Pixels, (((BitsPerPixel * Width + 31) & ~31) / 8) * Height);
+            hFile.close();
+            DeleteObject(Section);
+            return true;
+        }
+    */
+    DeleteObject(Section);
+    return false;
+>>>>>>> Stashed changes
 }
